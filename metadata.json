@@ -1,0 +1,6 @@
+{
+  "name": "Coptogram Docs",
+  "description": "Comprehensive documentation for the Coptogram Platform, a modern Christian learning management system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["documentation", "search", "dark-mode"]
+}
