@@ -57,6 +57,21 @@
         }
       },
       "required": ["id", "title", "description"]
+    },
+    "feedback": {
+      "title": "Feedback Entry",
+      "description": "User feedback for documentation pages.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["positive", "negative"] },
+        "comment": { "type": "string" },
+        "sectionId": { "type": "string" },
+        "itemId": { "type": "string" },
+        "language": { "type": "string" },
+        "timestamp": { "type": "object", "format": "google-firestore-timestamp" },
+        "page": { "type": "string" }
+      },
+      "required": ["type", "sectionId", "language", "timestamp", "page"]
     }
   },
   "firestore": {
@@ -77,6 +92,10 @@
         }
       },
       "description": "Administrator roles."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "feedback",
+      "description": "User-submitted feedback entries."
     }
   }
 }

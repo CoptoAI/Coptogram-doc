@@ -17,10 +17,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (request.auth.token.email.toLower() == "mokakokaloka90@gmail.com")
-      );
+      return isSignedIn() && 
+             request.auth.token.email_verified == true && (
+               exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+               (request.auth.token.email.toLower() == "mokakokaloka90@gmail.com")
+             );
     }
 
     function isValidId(id) {
@@ -54,6 +55,16 @@ service cloud.firestore {
              data.description.size() <= 50000;
     }
 
+    function isValidFeedback(data) {
+      return data.type in ['positive', 'negative'] &&
+             data.sectionId is string &&
+             data.itemId is string &&
+             data.language is string &&
+             data.timestamp == request.time &&
+             data.page is string &&
+             (!('comment' in data) || (data.comment is string && data.comment.size() <= 2000));
+    }
+
     // --- Collection Routes ---
 
     // Sections
@@ -74,6 +85,19 @@ service cloud.firestore {
     match /admins/{adminId} {
       allow read: if isAdmin();
       allow write: if isAdmin(); // Only admins can manage other admins
+    }
+
+    // Feedback
+    match /feedback/{feedbackId} {
+      allow create: if isValidFeedback(incoming()) && isValidId(feedbackId);
+      allow read, list: if isAdmin();
+      allow update, delete: if false; // Feedback is immutable once sent
+    }
+
+    // Config
+    match /config/{configId} {
+      allow read: if true; // Publicly readable for landing page settings
+      allow write: if isAdmin();
     }
   }
 }

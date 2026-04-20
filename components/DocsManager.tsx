@@ -30,11 +30,17 @@ export function DocsManager() {
   const [language, setLanguage] = React.useState<'en' | 'ar'>(langParam === 'ar' ? 'ar' : 'en');
   const [docsData, setDocsData] = React.useState<DocSection[]>(staticDocs);
   const [isDataLoaded, setIsDataLoaded] = React.useState(false);
+  const [siteConfig, setSiteConfig] = React.useState<any>(null);
 
   // Load from Firestore
   React.useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch Config
+        const configSnapshot = await getDocs(query(collection(db, 'config')));
+        const landingConfig = configSnapshot.docs.find(d => d.id === 'landing')?.data();
+        if (landingConfig) setSiteConfig(landingConfig);
+
         const q = query(collection(db, 'sections'), orderBy('order', 'asc'));
         const snapshot = await getDocs(q);
         
@@ -243,6 +249,12 @@ export function DocsManager() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+      >
+        {language === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
+      </a>
       <Navbar 
         searchQuery={searchQuery}
         onSearch={setSearchQuery} 
@@ -254,12 +266,13 @@ export function DocsManager() {
       />
       
       {!activeSectionId && !searchQuery ? (
-        <main className="flex-1">
+        <main id="main-content" className="flex-1" tabIndex={-1}>
           <LandingView 
             onSectionSelect={navigateToSection} 
             onSearch={setSearchQuery} 
             docs={localizedDocs}
             language={language}
+            siteConfig={siteConfig}
           />
         </main>
       ) : (
@@ -273,11 +286,13 @@ export function DocsManager() {
             language={language}
           />
           
-          <main className="relative py-6 lg:gap-10 lg:py-8 lg:pl-4 min-h-[calc(100vh-3.5rem)]">
+          <main id="main-content" className="relative py-6 lg:gap-10 lg:py-8 lg:pl-4 min-h-[calc(100vh-3.5rem)]" tabIndex={-1}>
             <AnimatePresence mode="wait">
               {searchQuery ? (
                 <motion.div
                   key="search-results"
+                  role="region"
+                  aria-live="polite"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -298,28 +313,29 @@ export function DocsManager() {
                   </div>
 
                   {searchResults.length > 0 ? (
-                    <div className="grid gap-4">
+                    <ul className="grid gap-4" role="list">
                       {searchResults.map((result, idx) => (
-                        <button
-                          key={`${result.sectionId}-${result.itemId || 'sec'}-${idx}`}
-                          className="flex items-center justify-between group p-6 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all text-start"
-                          onClick={() => handleResultClick(result.sectionId, result.itemId)}
-                        >
-                          <div>
-                            <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                              {result.matchType === 'section' 
-                                ? (language === 'ar' ? 'قسم التوثيق' : 'Documentation Section') 
-                                : (language === 'ar' ? 'عنصر مرجعي' : 'Reference Item')}
-                              {idx < 3 && <SparklesIcon className="h-3 w-3" />}
+                        <li key={`${result.sectionId}-${result.itemId || 'sec'}-${idx}`}>
+                          <button
+                            className="flex items-center justify-between group w-full p-6 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-muted/50 transition-all text-start"
+                            onClick={() => handleResultClick(result.sectionId, result.itemId)}
+                          >
+                            <div>
+                              <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                {result.matchType === 'section' 
+                                  ? (language === 'ar' ? 'قسم التوثيق' : 'Documentation Section') 
+                                  : (language === 'ar' ? 'عنصر مرجعي' : 'Reference Item')}
+                                {idx < 3 && <SparklesIcon className="h-3 w-3" aria-hidden="true" />}
+                              </div>
+                              <div className="text-lg font-bold group-hover:text-primary transition-colors">
+                                {result.title}
+                              </div>
                             </div>
-                            <div className="text-lg font-bold group-hover:text-primary transition-colors">
-                              {result.title}
-                            </div>
-                          </div>
-                          <ArrowRightIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180" />
-                        </button>
+                            <ArrowRightIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180" aria-hidden="true" />
+                          </button>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   ) : (
                     <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
                       <SearchIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />

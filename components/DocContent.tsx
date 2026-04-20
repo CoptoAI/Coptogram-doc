@@ -670,65 +670,65 @@ export function DocContent({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="mx-auto max-w-4xl px-4 py-8 lg:px-8"
+      className="mx-auto max-w-6xl px-4 py-8 lg:px-8"
     >
       <Breadcrumbs items={breadcrumbItems} className="mb-6" />
 
-      <h1 className="text-[32px] font-bold tracking-tight text-foreground mb-3 text-start">
-        {(language === 'ar' && section.translations?.ar) ? section.translations.ar.title : section.title}
-      </h1>
+      <div id="main-content" className="flex flex-col lg:flex-row gap-12 items-start">
+        <div className="flex-1 min-w-0 order-2 lg:order-1">
+          <h1 className="text-[32px] font-bold tracking-tight text-foreground mb-3 text-start">
+            {(language === 'ar' && section.translations?.ar) ? section.translations.ar.title : section.title}
+          </h1>
 
-      {((language === 'ar' ? section.translations?.ar?.tags : section.tags) || []).length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {(language === 'ar' ? section.translations?.ar?.tags : section.tags)?.map((tag, idx) => (
-            <span 
-              key={idx} 
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/5 text-primary text-[11px] font-bold border border-primary/10 transition-all hover:bg-primary/10"
+          {((language === 'ar' ? section.translations?.ar?.tags : section.tags) || []).length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {(language === 'ar' ? section.translations?.ar?.tags : section.tags)?.map((tag, idx) => (
+                <span 
+                  key={idx} 
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/5 text-primary text-[11px] font-bold border border-primary/10 transition-all hover:bg-primary/10"
+                >
+                  <Hash className="h-3 w-3 opacity-50" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="markdown-body prose dark:prose-invert max-w-none text-muted-foreground mb-8 text-start">
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]} 
+              rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+              components={MarkdownComponents}
             >
-              <Hash className="h-3 w-3 opacity-50" />
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
+              {linkify((language === 'ar' && section.translations?.ar) ? section.translations.ar.content : section.content)}
+            </ReactMarkdown>
+          </div>
 
-      <div className="markdown-body prose dark:prose-invert max-w-none text-muted-foreground mb-8 text-start">
-        <ReactMarkdown 
-          remarkPlugins={[remarkGfm]} 
-          rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-          components={MarkdownComponents}
-        >
-          {linkify((language === 'ar' && section.translations?.ar) ? section.translations.ar.content : section.content)}
-        </ReactMarkdown>
-      </div>
+          {section.id === 'overview' && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-12 flex justify-start"
+            >
+              <button
+                onClick={() => onNavigate('org-getting-started')}
+                className="group flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
+              >
+                {language === 'ar' ? 'ابدأ الآن' : 'Get Started'}
+                <ArrowRight className={cn("h-5 w-5 transition-transform group-hover:translate-x-1", language === 'ar' && "rotate-180 group-hover:-translate-x-1")} />
+              </button>
+            </motion.div>
+          )}
 
-      {section.id === 'overview' && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-12 flex justify-start"
-        >
-          <button
-            onClick={() => onNavigate('org-getting-started')}
-            className="group flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
-          >
-            {language === 'ar' ? 'ابدأ الآن' : 'Get Started'}
-            <ArrowRight className={cn("h-5 w-5 transition-transform group-hover:translate-x-1", language === 'ar' && "rotate-180 group-hover:-translate-x-1")} />
-          </button>
-        </motion.div>
-      )}
+          <div className="space-y-10">
+            <div className="bg-primary/[0.05] border border-primary/20 border-s-4 border-s-primary rounded-md p-4 mb-8 text-[13px] text-foreground/90 text-start">
+              <strong>{language === 'ar' ? 'ملاحظة:' : 'Note:'}</strong> {language === 'ar' 
+                ? 'هذا تخطيط مستندات عالي الكثافة. استخدم الشريط الجانبي للتنقل عبر الوحدات الأساسية لنظام كوبتوجرام.' 
+                : 'This is a high-density documentation layout. Use the sidebar to navigate through the core modules of the Coptogram system.'}
+            </div>
 
-      <DocTOC items={section.items || []} language={language} />
-
-      <div className="space-y-10">
-        <div className="bg-primary/[0.05] border border-primary/20 border-s-4 border-s-primary rounded-md p-4 mb-8 text-[13px] text-foreground/90 text-start">
-          <strong>{language === 'ar' ? 'ملاحظة:' : 'Note:'}</strong> {language === 'ar' 
-            ? 'هذا تخطيط مستندات عالي الكثافة. استخدم الشريط الجانبي للتنقل عبر الوحدات الأساسية لنظام كوبتوجرام.' 
-            : 'This is a high-density documentation layout. Use the sidebar to navigate through the core modules of the Coptogram system.'}
-        </div>
-
-        {section.items?.map((item) => (
+            {section.items?.map((item) => (
           <div key={item.id} className="scroll-mt-20 pt-2" id={item.id}>
             <div className="flex items-center gap-3 mb-3">
               <h2 className="text-xl font-bold tracking-tight text-start">
@@ -820,6 +820,12 @@ export function DocContent({
           </div>
         ))}
       </div>
+    </div>
+
+        <aside className="w-full lg:w-64 shrink-0 order-1 lg:order-2 lg:sticky lg:top-24">
+          <DocTOC items={section.items || []} language={language} />
+        </aside>
+      </div>
 
       {/* Pagination: Previous & Next Section */}
       {allDocs && allDocs.length > 1 && (
@@ -870,7 +876,7 @@ export function DocContent({
         </div>
       )}
 
-      <Feedback language={language} />
+      <Feedback language={language} sectionId={section.id} itemId={activeItemId} />
 
       <footer className="mt-20 border-t border-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-4">
