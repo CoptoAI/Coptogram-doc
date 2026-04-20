@@ -192,6 +192,15 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
             <Github className="h-5 w-5" />
           </a>
 
+          <a
+            href="/admin"
+            className="flex items-center gap-1.5 rounded-md px-3 py-1 bg-foreground text-background hover:opacity-90 transition-opacity border border-foreground/20 font-bold"
+            aria-label={language === 'ar' ? "لوحة الإدارة" : "Admin Panel"}
+          >
+            <Monitor className="h-3.5 w-3.5" />
+            <span className="text-[10px] uppercase">{language === 'ar' ? 'الإدارة' : 'Admin'}</span>
+          </a>
+
           <button
             onClick={() => onLanguageChange?.(language === 'en' ? 'ar' : 'en')}
             className="flex items-center gap-1.5 rounded-md px-2 py-1 bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"

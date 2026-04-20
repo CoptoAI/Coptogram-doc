@@ -19,12 +19,12 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        request.auth.token.email == "mokakokaloka90@gmail.com"
+        (request.auth.token.email.toLower() == "mokakokaloka90@gmail.com")
       );
     }
 
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() <= 256;
     }
 
     function incoming() {
@@ -38,16 +38,20 @@ service cloud.firestore {
     // --- Entity Validations ---
 
     function isValidSection(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.title is string && data.title.size() <= 200 &&
-             data.category in ['organization', 'student', 'general'] &&
-             data.content is string && data.content.size() <= 10000;
+      return data.id is string &&
+             data.title is string &&
+             data.category is string &&
+             data.content is string &&
+             data.order is int &&
+             data.content.size() <= 100000;
     }
 
     function isValidItem(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.title is string && data.title.size() <= 200 &&
-             data.description is string && data.description.size() <= 5000;
+      return data.id is string &&
+             data.title is string &&
+             data.description is string &&
+             data.order is int &&
+             data.description.size() <= 50000;
     }
 
     // --- Collection Routes ---

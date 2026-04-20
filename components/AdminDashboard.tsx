@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useSearchParams } from 'next/navigation';
 import { 
   collection, 
   getDocs, 
@@ -47,13 +48,18 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function AdminDashboard() {
+  const searchParams = useSearchParams();
+  const langParam = searchParams.get('lang');
+  
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [sections, setSections] = React.useState<DocSection[]>([]);
   const [editingSection, setEditingSection] = React.useState<DocSection | null>(null);
   const [editingItem, setEditingItem] = React.useState<{ sectionId: string, item: DocItem } | null>(null);
   const [isMigrating, setIsMigrating] = React.useState(false);
-  const [activeLang, setActiveLang] = React.useState<'en' | 'ar'>('en');
+  const [activeLang, setActiveLang] = React.useState<'en' | 'ar'>(langParam === 'ar' ? 'ar' : 'en');
+
+  const isUserAdmin = user?.email?.toLowerCase() === 'mokakokaloka90@gmail.com';
 
   // Load sections from Firestore
   const fetchSections = async () => {
@@ -100,32 +106,63 @@ export default function AdminDashboard() {
   const handleLogout = () => signOut(auth);
 
   const migrateData = async () => {
-    if (!confirm('This will overwrite current data in Firestore with initial static data. Continue?')) return;
+    if (!isUserAdmin) {
+      alert(`Unauthorized: Your email (${user?.email}) is not in the administrator list.`);
+      return;
+    }
+
+    const totalItems = initialDocs.reduce((acc, sec) => acc + 1 + (sec.items?.length || 0), 0);
+    if (!confirm(`This will import ${initialDocs.length} sections and ${totalItems - initialDocs.length} articles into Firestore. Existing data will be overwritten if IDs match. Continue?`)) return;
+    
     setIsMigrating(true);
     try {
+      console.log('Starting migration...');
       const batch = writeBatch(db);
       
+      // Recursive helper to clean undefined values and nested objects
+      const deepClean = (obj: any): any => {
+        if (obj === null || typeof obj !== 'object') return obj;
+        if (Array.isArray(obj)) return obj.map(deepClean);
+        
+        const clean: any = {};
+        Object.keys(obj).forEach(key => {
+          const value = deepClean(obj[key]);
+          if (value !== undefined) {
+            clean[key] = value;
+          }
+        });
+        return clean;
+      };
+
       for (let i = 0; i < initialDocs.length; i++) {
         const section = initialDocs[i];
         const sectionRef = doc(db, 'sections', section.id);
         const { items, ...sectionMeta } = section;
         
-        batch.set(sectionRef, { ...sectionMeta, order: i });
+        batch.set(sectionRef, deepClean({ ...sectionMeta, order: i }));
+        console.log(`Prepared section: ${section.id}`);
         
         if (items) {
           for (let j = 0; j < items.length; j++) {
             const item = items[j];
             const itemRef = doc(db, `sections/${section.id}/items`, item.id);
-            batch.set(itemRef, { ...item, order: j });
+            batch.set(itemRef, deepClean({ ...item, order: j }));
+            console.log(`  Prepared item: ${item.id}`);
           }
         }
       }
       
       await batch.commit();
+      console.log('Batch committed successfully');
       await fetchSections();
-      alert('Migration complete!');
-    } catch (error) {
-      handleFirestoreError(error, 'write', 'migration');
+      alert(`Success! Imported ${totalItems} records to Firestore.`);
+    } catch (error: any) {
+      console.error('Migration failed:', error);
+      try {
+        handleFirestoreError(error, 'write', 'migration-batch');
+      } catch (formattedError: any) {
+        alert('Migration failed with detailed info: ' + formattedError.message);
+      }
     } finally {
       setIsMigrating(false);
     }
@@ -147,8 +184,9 @@ export default function AdminDashboard() {
       await setDoc(sectionRef, sectionData, { merge: true });
       setEditingSection(null);
       fetchSections();
-    } catch (error) {
-      handleFirestoreError(error, 'update', `sections/${editingSection.id}`);
+    } catch (error: any) {
+      console.error('Save section failed:', error);
+      alert('Save section failed: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -161,8 +199,9 @@ export default function AdminDashboard() {
       await setDoc(itemRef, editingItem.item, { merge: true });
       setEditingItem(null);
       fetchSections();
-    } catch (error) {
-      handleFirestoreError(error, 'update', `sections/${editingItem.sectionId}/items/${editingItem.item.id}`);
+    } catch (error: any) {
+      console.error('Save item failed:', error);
+      alert('Save item failed: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -171,8 +210,9 @@ export default function AdminDashboard() {
     try {
       await deleteDoc(doc(db, 'sections', id));
       fetchSections();
-    } catch (error) {
-      handleFirestoreError(error, 'delete', `sections/${id}`);
+    } catch (error: any) {
+      console.error('Delete section failed:', error);
+      alert('Delete section failed: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -181,8 +221,9 @@ export default function AdminDashboard() {
     try {
       await deleteDoc(doc(db, `sections/${sectionId}/items`, itemId));
       fetchSections();
-    } catch (error) {
-      handleFirestoreError(error, 'delete', `sections/${sectionId}/items/${itemId}`);
+    } catch (error: any) {
+      console.error('Delete item failed:', error);
+      alert('Delete item failed: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -236,7 +277,14 @@ export default function AdminDashboard() {
           
           <div className="flex items-center gap-6">
             <div className="hidden md:flex flex-col items-end text-xs">
-              <span className="font-bold text-foreground">{user.displayName}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-foreground">{user.displayName}</span>
+                {isUserAdmin ? (
+                  <span className="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] uppercase font-black">Admin</span>
+                ) : (
+                  <span className="bg-destructive/20 text-destructive px-1.5 py-0.5 rounded text-[10px] uppercase font-black">Unauthorized</span>
+                )}
+              </div>
               <span className="text-muted-foreground">{user.email}</span>
             </div>
             <button 
@@ -258,6 +306,13 @@ export default function AdminDashboard() {
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
+            <a 
+              href="/"
+              className="flex items-center gap-2 py-2.5 px-5 rounded-xl border border-border bg-card hover:bg-muted text-sm font-bold transition-all"
+            >
+              <Layout className="h-4 w-4" />
+              View Live Site
+            </a>
             <button 
               onClick={migrateData}
               disabled={isMigrating}
@@ -301,13 +356,27 @@ export default function AdminDashboard() {
         {/* Section List */}
         <div className="space-y-6">
           {sections.length === 0 && !isMigrating && (
-            <div className="text-center py-20 border-2 border-dashed border-border rounded-3xl">
-              <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                <Layout className="h-8 w-8 text-muted-foreground/40" />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-24 bg-card border-2 border-dashed border-border rounded-[2.5rem] px-6"
+            >
+              <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <UploadCloud className="h-12 w-12 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-muted-foreground mb-2">No Content Yet</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">Start by importing initial data or creating your first documentation section manually.</p>
-            </div>
+              <h2 className="text-3xl font-black mb-4 tracking-tight">Database is Empty</h2>
+              <p className="text-muted-foreground max-w-md mx-auto mb-10 leading-relaxed text-lg">
+                Your Cloud Firestore database is currently empty. Click below to synchronize your documentation content from the local guide.
+              </p>
+              <button 
+                onClick={migrateData}
+                disabled={isMigrating}
+                className="flex items-center gap-3 py-4 px-10 rounded-2xl bg-primary text-primary-foreground font-bold shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 mx-auto"
+              >
+                {isMigrating ? <Loader2 className="h-6 w-6 animate-spin" /> : <UploadCloud className="h-6 w-6" />}
+                Import Initial Data Now
+              </button>
+            </motion.div>
           )}
 
           {sections.map((section, idx) => (
