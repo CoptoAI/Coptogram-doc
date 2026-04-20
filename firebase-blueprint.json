@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "section": {
+      "title": "Documentation Section",
+      "description": "A top-level category of documentation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string", "enum": ["organization", "student", "general"] },
+        "icon": { "type": "string" },
+        "content": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "order": { "type": "number" },
+        "translations": {
+          "type": "object",
+          "properties": {
+            "ar": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "content": { "type": "string" },
+                "tags": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      },
+      "required": ["id", "title", "category", "content"]
+    },
+    "item": {
+      "title": "Documentation Item",
+      "description": "A specific article or guide within a section.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "details": { "type": "array", "items": { "type": "string" } },
+        "version": { "type": "string" },
+        "code": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "order": { "type": "number" },
+        "translations": {
+          "type": "object",
+          "properties": {
+            "ar": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "description": { "type": "string" },
+                "details": { "type": "array", "items": { "type": "string" } },
+                "tags": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      },
+      "required": ["id", "title", "description"]
+    }
+  },
+  "firestore": {
+    "/sections/{sectionId}": {
+      "schema": "section",
+      "description": "Top-level documentation sections."
+    },
+    "/sections/{sectionId}/items/{itemId}": {
+      "schema": "item",
+      "description": "Articles belonging to a specific section."
+    },
+    "/admins/{adminId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string" },
+          "role": { "type": "string" }
+        }
+      },
+      "description": "Administrator roles."
+    }
+  }
+}

@@ -102,7 +102,7 @@ export function DocContent({
 
     // Current Section
     items.push({ 
-      label: section.title, 
+      label: (language === 'ar' && section.translations?.ar) ? section.translations.ar.title : section.title, 
       active: !activeItemId,
       ...(activeItemId ? { onClick: () => onNavigate(section.id) } : {})
     });
@@ -112,7 +112,7 @@ export function DocContent({
       const activeItem = section.items.find(i => i.id === activeItemId);
       if (activeItem) {
         items.push({ 
-          label: activeItem.title, 
+          label: (language === 'ar' && activeItem.translations?.ar) ? activeItem.translations.ar.title : activeItem.title, 
           active: true 
         });
       }
@@ -674,8 +674,8 @@ export function DocContent({
     >
       <Breadcrumbs items={breadcrumbItems} className="mb-6" />
 
-      <h1 className="text-[32px] font-bold tracking-tight text-foreground mb-3">
-        {section.title}
+      <h1 className="text-[32px] font-bold tracking-tight text-foreground mb-3 text-start">
+        {(language === 'ar' && section.translations?.ar) ? section.translations.ar.title : section.title}
       </h1>
 
       {((language === 'ar' ? section.translations?.ar?.tags : section.tags) || []).length > 0 && (
@@ -698,7 +698,7 @@ export function DocContent({
           rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
           components={MarkdownComponents}
         >
-          {linkify(section.content)}
+          {linkify((language === 'ar' && section.translations?.ar) ? section.translations.ar.content : section.content)}
         </ReactMarkdown>
       </div>
 
@@ -731,8 +731,8 @@ export function DocContent({
         {section.items?.map((item) => (
           <div key={item.id} className="scroll-mt-20 pt-2" id={item.id}>
             <div className="flex items-center gap-3 mb-3">
-              <h2 className="text-xl font-bold tracking-tight">
-                {item.title}
+              <h2 className="text-xl font-bold tracking-tight text-start">
+                {(language === 'ar' && item.translations?.ar) ? item.translations.ar.title : item.title}
               </h2>
               {item.version && (
                 <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary border border-primary/20 uppercase tracking-tighter">
@@ -760,13 +760,13 @@ export function DocContent({
                 rehypePlugins={[rehypeRaw, rehypeSanitize]}
                 components={MarkdownComponents}
               >
-                {linkify(item.description)}
+                {linkify((language === 'ar' && item.translations?.ar) ? item.translations.ar.description : item.description)}
               </ReactMarkdown>
             </div>
 
-            {item.details && (
+            {((language === 'ar' && item.translations?.ar?.details) || item.details) && (
               <ul className="mb-6 space-y-1.5 list-none text-[13px] text-muted-foreground">
-                {item.details.map((detail, idx) => (
+                {((language === 'ar' && item.translations?.ar?.details) ? item.translations.ar.details : (item.details || [])).map((detail, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-primary mt-2 shrink-0" />
                     <span className="text-foreground/80 leading-normal text-start">
@@ -870,7 +870,7 @@ export function DocContent({
         </div>
       )}
 
-      <Feedback />
+      <Feedback language={language} />
 
       <footer className="mt-20 border-t border-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-4">
@@ -883,7 +883,7 @@ export function DocContent({
             {language === 'ar' ? 'عدل هذه الصفحة' : 'Edit this page'} <ExternalLink className="h-3.5 w-3.5" />
           </a>
           <span className="hidden sm:inline opacity-30 select-none">|</span>
-          <span>Updated April 2026</span>
+          <span>{language === 'ar' ? 'تم التحديث في أبريل 2026' : 'Updated April 2026'}</span>
         </div>
         <div className="text-center sm:text-end opacity-80">
           © 2026 Coptogram Platform. All rights reserved.

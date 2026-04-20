@@ -35,6 +35,7 @@ interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   docs: any[]; // Accept docs as prop
+  language?: 'en' | 'ar';
 }
 
 const iconMap: Record<string, any> = {
@@ -64,7 +65,7 @@ const iconMap: Record<string, any> = {
   'user-roles': Fingerprint,
 };
 
-export function Sidebar({ activeSection, onSectionChange, isOpen, onClose, docs }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, isOpen, onClose, docs, language = 'en' }: SidebarProps) {
   return (
     <>
       <AnimatePresence>
@@ -94,7 +95,7 @@ export function Sidebar({ activeSection, onSectionChange, isOpen, onClose, docs 
           <div className="space-y-6">
             <div className="space-y-1">
               <div className="px-3 mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60" id="sidebar-doc-label">
-                Documentation
+                {language === 'ar' ? 'التوثيق' : 'Documentation'}
               </div>
               <ul className="space-y-1" aria-labelledby="sidebar-doc-label">
                 {docs.map((section) => {

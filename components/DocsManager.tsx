@@ -2,14 +2,16 @@
 
 import * as React from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { docs, DocSection } from '@/lib/docs-data';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { docs as staticDocs, DocSection, DocItem } from '@/lib/docs-data';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { DocContent } from '@/components/DocContent';
 import { TableOfContents } from '@/components/TableOfContents';
 import { LandingView } from '@/components/LandingView';
 import { motion, AnimatePresence } from 'motion/react';
-import { SearchIcon, XIcon, ArrowRightIcon, SparklesIcon } from 'lucide-react';
+import { SearchIcon, XIcon, ArrowRightIcon, SparklesIcon, Loader2 } from 'lucide-react';
 import Fuse from 'fuse.js';
 
 export function DocsManager() {
@@ -26,6 +28,41 @@ export function DocsManager() {
   const [themeColor, setThemeColor] = React.useState('default');
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [language, setLanguage] = React.useState<'en' | 'ar'>(langParam === 'ar' ? 'ar' : 'en');
+  const [docsData, setDocsData] = React.useState<DocSection[]>(staticDocs);
+  const [isDataLoaded, setIsDataLoaded] = React.useState(false);
+
+  // Load from Firestore
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const q = query(collection(db, 'sections'), orderBy('order', 'asc'));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+          setIsDataLoaded(true);
+          return;
+        }
+
+        const sectionsList: DocSection[] = [];
+        for (const sectionDoc of snapshot.docs) {
+          const sectionData = sectionDoc.data() as DocSection;
+          // Subcollection
+          const itemsQ = query(collection(db, `sections/${sectionDoc.id}/items`), orderBy('order', 'asc'));
+          const itemsSnapshot = await getDocs(itemsQ);
+          sectionData.items = itemsSnapshot.docs.map(d => d.data() as DocItem);
+          sectionsList.push(sectionData);
+        }
+        
+        setDocsData(sectionsList);
+        setIsDataLoaded(true);
+      } catch (error) {
+        console.error('Firestore fetch error:', error);
+        setIsDataLoaded(true); // Fallback to static
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   // Sync state with URL
   React.useEffect(() => {
@@ -54,7 +91,7 @@ export function DocsManager() {
   }, [activeSectionId, activeItemId, language, searchParams]);
 
   const localizedDocs = React.useMemo(() => {
-    return docs.map(section => {
+    return docsData.map(section => {
       const localizedSection = { ...section };
       if (language === 'ar' && section.translations?.ar) {
         localizedSection.title = section.translations.ar.title;
@@ -77,7 +114,7 @@ export function DocsManager() {
       
       return localizedSection;
     });
-  }, [language]);
+  }, [language, docsData]);
 
   const activeSection = localizedDocs.find((s) => s.id === activeSectionId) || localizedDocs[0];
 
@@ -98,7 +135,7 @@ export function DocsManager() {
       type: 'section' | 'item' 
     }[] = [];
     
-    docs.forEach(section => {
+    docsData.forEach(section => {
       // Add section itself
       items.push({
         sectionId: section.id,
@@ -124,7 +161,7 @@ export function DocsManager() {
     });
     
     return items;
-  }, []);
+  }, [docsData]);
 
   // Fuse.js instance with enhanced scoring and multi-language support
   const fuse = React.useMemo(() => new Fuse(searchableItems, {
@@ -233,6 +270,7 @@ export function DocsManager() {
             isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
             docs={localizedDocs}
+            language={language}
           />
           
           <main className="relative py-6 lg:gap-10 lg:py-8 lg:pl-4 min-h-[calc(100vh-3.5rem)]">
@@ -302,7 +340,7 @@ export function DocsManager() {
                       activeItemId={activeItemId}
                       language={language}
                       onLinkClick={handleResultClick}
-                      allDocs={docs}
+                      allDocs={docsData}
                     />
                   </div>
                   <TableOfContents items={activeSection.items || []} language={language} />

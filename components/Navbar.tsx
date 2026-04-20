@@ -54,7 +54,7 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
         <button
           onClick={onToggleSidebar}
           className="rounded-md p-1.5 hover:bg-muted lg:hidden"
-          aria-label="Toggle Sidebar"
+          aria-label={language === 'ar' ? 'تبديل الشريط الجانبي' : 'Toggle Sidebar'}
         >
           <Menu className="h-4 w-4" />
         </button>
@@ -64,7 +64,9 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
           onClick={onHomeClick}
         >
           <Monitor className="h-5 w-5 text-primary" />
-          <span className="hidden sm:inline-block tracking-tight">NexusDocs</span>
+          <span className="hidden sm:inline-block tracking-tight">
+            {language === 'ar' ? 'كوبتوجرام دوكس' : 'Coptogram Docs'}
+          </span>
           <span className="hidden md:inline-flex ml-2 items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary border border-primary/20">
             v2.4.1
           </span>
@@ -119,7 +121,9 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
         </div>
 
         <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
-          <span className="hidden lg:inline hover:text-foreground cursor-pointer transition-colors">Changelog</span>
+          <span className="hidden lg:inline hover:text-foreground cursor-pointer transition-colors">
+            {language === 'ar' ? 'سجل التغييرات' : 'Changelog'}
+          </span>
           
           <div className="relative">
             <button
@@ -170,7 +174,10 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="rounded-md p-2 hover:bg-muted"
-            aria-label={theme === 'dark' ? "Switch to light theme" : "Switch to dark theme"}
+            aria-label={language === 'ar' 
+              ? (theme === 'dark' ? "التبديل إلى المظهر الفاتح" : "التبديل إلى المظهر الداكن")
+              : (theme === 'dark' ? "Switch to light theme" : "Switch to dark theme")
+            }
           >
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
@@ -180,7 +187,7 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-md p-2 hover:bg-muted"
-            aria-label="View on GitHub"
+            aria-label={language === 'ar' ? "عرض على GitHub" : "View on GitHub"}
           >
             <Github className="h-5 w-5" />
           </a>
@@ -188,7 +195,7 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
           <button
             onClick={() => onLanguageChange?.(language === 'en' ? 'ar' : 'en')}
             className="flex items-center gap-1.5 rounded-md px-2 py-1 bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
-            aria-label="Toggle language"
+            aria-label={language === 'ar' ? "تغيير اللغة" : "Toggle language"}
           >
             <Languages className="h-4 w-4" />
             <span className="text-[10px] font-bold uppercase">{language === 'en' ? 'AR' : 'EN'}</span>
