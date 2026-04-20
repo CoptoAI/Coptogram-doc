@@ -13,7 +13,7 @@ import {
   Medal, 
   Radio, 
   Users, 
-  Fingerprint, 
+  Shield, 
   Compass,
   ArrowUp,
   Circle,
@@ -21,7 +21,7 @@ import {
   ShieldCheck,
   Box
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
   activeSection: string;
@@ -42,7 +42,7 @@ const iconMap: Record<string, any> = {
   Medal,
   Radio,
   Users,
-  Fingerprint,
+  Shield,
   Compass,
   
   // Legacy/Keyword Mapping
@@ -56,7 +56,7 @@ const iconMap: Record<string, any> = {
   community: Users,
   utilities: Box,
   tutorials: Compass,
-  'user-roles': Fingerprint,
+  'user-roles': Shield,
 };
 
 export function Sidebar({ activeSection, onSectionChange, isOpen, onClose, docs, language = 'en' }: SidebarProps) {

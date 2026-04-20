@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { DocItem } from '@/lib/docs-data';
 import { cn } from '@/lib/utils';
-import { ListIcon, ChevronRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { List, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface DocTOCProps {
   items: DocItem[];
@@ -35,7 +35,7 @@ export function DocTOC({ items, className, language = 'en' }: DocTOCProps) {
       className
     )}>
       <div className="flex items-center gap-2 mb-6 text-[11px] font-bold uppercase tracking-widest text-primary">
-        <ListIcon className="h-4 w-4" />
+        <List className="h-4 w-4" />
         {language === 'ar' ? 'المحتويات في هذا القسم' : 'Contents in this section'}
       </div>
       

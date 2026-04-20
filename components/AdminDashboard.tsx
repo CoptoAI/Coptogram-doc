@@ -52,7 +52,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { motion, AnimatePresence, Reorder } from 'motion/react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -765,7 +765,7 @@ export default function AdminDashboard() {
                   >
                     <h3 className="font-bold text-lg flex items-center gap-2">
                       {activeLang === 'ar' ? section.translations?.ar?.title || section.title : section.title}
-                      {!section.translations?.ar && <AlertCircle className="h-3.5 w-3.5 text-amber-500" title="Missing Arabic Translation" />}
+                      {!section.translations?.ar && <span title="Missing Arabic Translation"><AlertCircle className="h-3.5 w-3.5 text-amber-500" /></span>}
                     </h3>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{section.id}</span>

@@ -6,12 +6,12 @@ import { CodeBlock } from './CodeBlock';
 import { Breadcrumbs } from './Breadcrumbs';
 import { Feedback } from './Feedback';
 import { DocTOC } from './DocTOC';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { 
   ExternalLink, 
   ChevronRight,
   ChevronLeft,
-  ListIcon, 
+  List, 
   AlertTriangle, 
   RefreshCw, 
   FileQuestion, 
@@ -552,7 +552,7 @@ export function DocContent({
                 {type === 'warning' && <AlertTriangle className="h-4 w-4" />}
                 {type === 'error' && <XCircle className="h-4 w-4" />}
                 {type === 'info' && <Info className="h-4 w-4" />}
-                {type === 'default' && <ListIcon className="h-4 w-4" />}
+                {type === 'default' && <List className="h-4 w-4" />}
               </div>
               <span className={cn(
                 "font-bold text-sm tracking-tight capitalize",
@@ -772,7 +772,7 @@ export function DocContent({
             {item.relatedLinks && item.relatedLinks.length > 0 && (
               <div className="mt-8 p-5 rounded-xl bg-muted/30 border border-border/50">
                 <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4 opacity-70">
-                  <ListIcon className="h-3 w-3" />
+                  <List className="h-3 w-3" />
                   {language === 'ar' ? 'استكشف المزيد' : 'Explore Further'}
                 </div>
                 <div className="flex flex-wrap gap-3">

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ThumbsUp, ThumbsDown, CheckCircle2, Loader2, Send, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';

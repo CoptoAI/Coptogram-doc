@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { docs } from '@/lib/docs-data';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { 
   Building2, 
   User, 
@@ -23,7 +23,7 @@ import {
   Medal,
   Radio,
   Users,
-  Fingerprint,
+  Shield,
   Compass
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -51,7 +51,7 @@ const iconMap: Record<string, any> = {
   Medal,
   Radio,
   Users,
-  Fingerprint,
+  Shield,
   Compass
 };
 

@@ -10,8 +10,8 @@ import { Sidebar } from '@/components/Sidebar';
 import { DocContent } from '@/components/DocContent';
 import { TableOfContents } from '@/components/TableOfContents';
 import { LandingView } from '@/components/LandingView';
-import { motion, AnimatePresence } from 'motion/react';
-import { SearchIcon, XIcon, ArrowRightIcon, SparklesIcon, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, X, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import Fuse from 'fuse.js';
 
 export function DocsManager() {
@@ -300,7 +300,7 @@ export function DocsManager() {
                 >
                   <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      <SearchIcon className="h-6 w-6 text-primary" />
+                      <Search className="h-6 w-6 text-primary" />
                       {language === 'ar' ? (
                         <>نتائج البحث عن &quot;{searchQuery}&quot;</>
                       ) : (
@@ -308,7 +308,7 @@ export function DocsManager() {
                       )}
                     </h2>
                     <button onClick={() => setSearchQuery('')} className="p-2 hover:bg-muted rounded-full">
-                      <XIcon className="h-5 w-5" />
+                      <X className="h-5 w-5" />
                     </button>
                   </div>
 
@@ -325,20 +325,20 @@ export function DocsManager() {
                                 {result.matchType === 'section' 
                                   ? (language === 'ar' ? 'قسم التوثيق' : 'Documentation Section') 
                                   : (language === 'ar' ? 'عنصر مرجعي' : 'Reference Item')}
-                                {idx < 3 && <SparklesIcon className="h-3 w-3" aria-hidden="true" />}
+                                {idx < 3 && <Sparkles className="h-3 w-3" aria-hidden="true" />}
                               </div>
                               <div className="text-lg font-bold group-hover:text-primary transition-colors">
                                 {result.title}
                               </div>
                             </div>
-                            <ArrowRightIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180" aria-hidden="true" />
+                            <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180" aria-hidden="true" />
                           </button>
                         </li>
                       ))}
                     </ul>
                   ) : (
                     <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
-                      <SearchIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                      <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
                       <p className="text-muted-foreground text-lg italic">
                         {language === 'ar' 
                           ? 'لم يتم العثور على نتائج لاستعلامك. جرب كلمات رئيسية مختلفة.' 

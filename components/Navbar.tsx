@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useTheme } from 'next-themes';
 import { Moon, Sun, Search, Github, Monitor, Palette, Menu, Languages, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface NavbarProps {
@@ -158,7 +158,7 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
                         style={{ backgroundColor: c.color }}
                         aria-label={`Set theme to ${c.label}`}
                       >
-                        {document.documentElement.getAttribute('data-theme') === c.name && (
+                        {mounted && typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === c.name && (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="h-2 w-2 rounded-full bg-white shadow-sm" />
                           </div>
