@@ -523,7 +523,7 @@ export default function AdminDashboard() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md p-8 rounded-3xl border border-border bg-card shadow-2xl text-center"
+          {...{ className: "w-full max-w-md p-8 rounded-3xl border border-border bg-card shadow-2xl text-center" }}
         >
           <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Monitor className="h-8 w-8 text-primary" />
