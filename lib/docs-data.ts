@@ -6,6 +6,7 @@ export interface DocSection {
   content: string;
   items?: DocItem[];
   tags?: string[];
+  order?: number;
   translations?: {
     ar: {
       title: string;
@@ -29,6 +30,7 @@ export interface DocItem {
   version?: string;
   code?: string;
   tags?: string[];
+  order?: number;
   relatedLinks?: RelatedLink[];
   translations?: {
     ar: {
@@ -49,6 +51,7 @@ export const docs: DocSection[] = [
     icon: 'Sparkles',
     content: 'Coptogram is a modern Christian learning platform that makes spiritual knowledge simple, practical, and easy to understand. This documentation provides a comprehensive guide for both Organizations (Churches/Dioceses) and Students.',
     tags: ['Introduction', 'Overview', 'Mission'],
+    order: 0,
     translations: {
       ar: {
         title: 'مرحباً بكم في كوبتوجرام',
@@ -62,6 +65,7 @@ export const docs: DocSection[] = [
         title: 'Platform Overview',
         description: 'Learn about the core philosophy of Coptogram as a centralized hub for digital discipleship.',
         tags: ['Core Philosophy', 'Digital Discipleship'],
+        order: 0,
         translations: {
           ar: {
             title: 'نظرة عامة على المنصة',

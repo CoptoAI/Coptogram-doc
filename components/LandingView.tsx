@@ -27,6 +27,11 @@ import {
   Compass
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+import { sanitizeSchema } from '@/lib/markdown-config';
 
 const iconMap: Record<string, any> = {
   Building2,
@@ -144,9 +149,14 @@ export function LandingView({ onSectionSelect, onSearch, docs, language = 'en', 
             <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight">
               {overviewDoc.title}
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-              {overviewDoc.content}
-            </p>
+            <div className="text-lg text-muted-foreground leading-relaxed mb-8 prose dark:prose-invert max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+              >
+                {language === 'ar' && overviewDoc.translations?.ar ? overviewDoc.translations.ar.content : overviewDoc.content}
+              </ReactMarkdown>
+            </div>
             <button 
               onClick={() => onSectionSelect(overviewDoc.id)}
               className="flex items-center gap-3 py-4 px-8 rounded-2xl bg-foreground text-background font-bold w-fit hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"

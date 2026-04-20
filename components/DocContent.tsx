@@ -28,27 +28,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { cn } from '@/lib/utils';
-
-// Sanitization schema to allow class names
-const sanitizeSchema = {
-  attributes: {
-    '*': ['className', 'class'],
-    'a': ['href', 'target', 'rel', 'className', 'class'],
-    'div': ['className', 'class', 'style'],
-    'p': ['className', 'class'],
-    'span': ['className', 'class'],
-    'blockquote': ['className', 'class'],
-    'ol': ['className', 'class'],
-    'ul': ['className', 'class'],
-    'li': ['className', 'class'],
-    'table': ['className', 'class'],
-    'thead': ['className', 'class'],
-    'tbody': ['className', 'class'],
-    'tr': ['className', 'class'],
-    'th': ['className', 'class'],
-    'td': ['className', 'class']
-  }
-};
+import { sanitizeSchema } from '@/lib/markdown-config';
 
 interface DocContentProps {
   section: DocSection | null | undefined;
@@ -631,8 +611,8 @@ export function DocContent({
     },
     table: ({ children, className }: any) => (
       <div className={cn(
-        "my-10 w-full overflow-hidden rounded-2xl border border-border shadow-xl",
-        className?.includes('sticky') && "max-h-[500px] overflow-y-auto"
+        "my-10 w-full overflow-x-auto rounded-2xl border border-border shadow-xl",
+        className?.includes('sticky') && "max-h-[600px] overflow-y-auto"
       )}>
         <table className={cn(
           "w-full text-sm text-left border-collapse",
@@ -643,9 +623,9 @@ export function DocContent({
         </table>
       </div>
     ),
-    thead: ({ children }: any) => <thead className="bg-muted/50 border-b border-border">{children}</thead>,
-    th: ({ children }: any) => <th className="px-6 py-4 font-bold text-foreground text-xs uppercase tracking-wider">{children}</th>,
-    td: ({ children }: any) => <td className="px-6 py-4 text-muted-foreground border-b border-border/50">{children}</td>,
+    thead: ({ children }: any) => <thead className="bg-muted/80 backdrop-blur-sm border-b border-border sticky top-0 z-10">{children}</thead>,
+    th: ({ children }: any) => <th className="px-6 py-4 font-black text-foreground text-[11px] uppercase tracking-wider">{children}</th>,
+    td: ({ children }: any) => <td className="px-6 py-4 text-foreground/80 border-b border-border/50 text-[13px]">{children}</td>,
     tr: ({ children, className }: any) => (
       <tr className={cn(
         "hover:bg-primary/[0.02] transition-colors",
@@ -757,7 +737,7 @@ export function DocContent({
             <div className="markdown-body prose dark:prose-invert max-w-none text-[14px] text-muted-foreground mb-4 text-start">
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]} 
-                rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
                 components={MarkdownComponents}
               >
                 {linkify((language === 'ar' && item.translations?.ar) ? item.translations.ar.description : item.description)}
@@ -772,7 +752,7 @@ export function DocContent({
                     <span className="text-foreground/80 leading-normal text-start">
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]} 
-                        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                        rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
                         components={MarkdownComponents}
                       >
                         {linkify(detail)}
