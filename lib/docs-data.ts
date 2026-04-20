@@ -5,10 +5,12 @@ export interface DocSection {
   icon?: string;
   content: string;
   items?: DocItem[];
+  tags?: string[];
   translations?: {
     ar: {
       title: string;
       content: string;
+      tags?: string[];
     }
   }
 }
@@ -26,12 +28,14 @@ export interface DocItem {
   details?: string[];
   version?: string;
   code?: string;
+  tags?: string[];
   relatedLinks?: RelatedLink[];
   translations?: {
     ar: {
       title: string;
       description: string;
       details?: string[];
+      tags?: string[];
       relatedLinks?: { title: string }[];
     }
   }
@@ -44,10 +48,12 @@ export const docs: DocSection[] = [
     category: 'general',
     icon: 'Sparkles',
     content: 'Coptogram is a modern Christian learning platform that makes spiritual knowledge simple, practical, and easy to understand. This documentation provides a comprehensive guide for both Organizations (Churches/Dioceses) and Students.',
+    tags: ['Introduction', 'Overview', 'Mission'],
     translations: {
       ar: {
         title: 'مرحباً بكم في كوبتوجرام',
-        content: 'كوبتوجرام هي منصة تعليمية مسيحية حديثة تجعل المعرفة الروحية بسيطة وعملية وسهلة الفهم. يوفر هذا المستند دليلاً شاملاً لكل من المنظمات (الكنائس/الإيبارشيات) والطلاب.'
+        content: 'كوبتوجرام هي منصة تعليمية مسيحية حديثة تجعل المعرفة الروحية بسيطة وعملية وسهلة الفهم. يوفر هذا المستند دليلاً شاملاً لكل من المنظمات (الكنائس/الإيبارشيات) والطلاب.',
+        tags: ['مقدمة', 'نظرة عامة', 'المهمة']
       }
     },
     items: [
@@ -55,10 +61,12 @@ export const docs: DocSection[] = [
         id: 'centralized-hub',
         title: 'Platform Overview',
         description: 'Learn about the core philosophy of Coptogram as a centralized hub for digital discipleship.',
+        tags: ['Core Philosophy', 'Digital Discipleship'],
         translations: {
           ar: {
             title: 'نظرة عامة على المنصة',
-            description: 'تعرف على الفلسفة الأساسية لكوبتوجرام كمركز مركزي للتلمذة الرقمية.'
+            description: 'تعرف على الفلسفة الأساسية لكوبتوجرام كمركز مركزي للتلمذة الرقمية.',
+            tags: ['الفلسفة الأساسية', 'التلمذة الرقمية']
           }
         }
       }
@@ -70,10 +78,12 @@ export const docs: DocSection[] = [
     category: 'organization',
     icon: 'Church',
     content: 'Learn how to set up your Church or Diocese on the Coptogram platform and prepare for your first course rollout.',
+    tags: ['Setup', 'Onboarding', 'Admin'],
     translations: {
       ar: {
         title: 'البدء للمنظمات',
-        content: 'تعرف على كيفية إعداد كنيستك أو إيبارشيتك على منصة كوبتوجرام والاستعداد لإطلاق دورتك التعليمية الأولى.'
+        content: 'تعرف على كيفية إعداد كنيستك أو إيبارشيتك على منصة كوبتوجرام والاستعداد لإطلاق دورتك التعليمية الأولى.',
+        tags: ['إعداد', 'التوطين', 'مسؤول']
       }
     },
     items: [
@@ -81,6 +91,7 @@ export const docs: DocSection[] = [
         id: 'account-setup',
         title: 'Initial Account Setup',
         description: 'Step-by-step guide to configuring your organizational profile and branding.',
+        tags: ['Branding', 'Profile', 'Configuration'],
         relatedLinks: [
           { title: 'User Roles', sectionId: 'user-roles' },
           { title: 'Monetization Basics', sectionId: 'org-monetization' }
@@ -123,10 +134,12 @@ export const docs: DocSection[] = [
     category: 'organization',
     icon: 'Library',
     content: 'Deep dive into creating and managing your e-learning content.',
+    tags: ['LMS', 'e-Learning', 'Pedagogy'],
     translations: {
       ar: {
         title: 'إدارة الدورات (نظام إدارة التعلم)',
-        content: 'تعمق في إنشاء وإدارة محتوى التعلم الإلكتروني الخاص بك.'
+        content: 'تعمق في إنشاء وإدارة محتوى التعلم الإلكتروني الخاص بك.',
+        tags: ['نظام إدارة التعلم', 'التعلم الإلكتروني', 'البيداغوجيا']
       }
     },
     items: [
@@ -134,10 +147,12 @@ export const docs: DocSection[] = [
         id: 'text-courses',
         title: 'Creating Text Courses',
         description: 'How to build engaging text and video-based modules.',
+        tags: ['Text-Based', 'Video', 'Modules'],
         translations: {
           ar: {
             title: 'إنشاء دورات نصية',
-            description: 'كيفية بناء وحدات جذابة تعتمد على النصوص والفيديو.'
+            description: 'كيفية بناء وحدات جذابة تعتمد على النصوص والفيديو.',
+            tags: ['مبني على النص', 'فيديو', 'وحدات']
           }
         }
       },
@@ -146,10 +161,12 @@ export const docs: DocSection[] = [
         title: 'SCORM & Interactive Content',
         description: 'Importing advanced e-learning files from external authoring tools.',
         version: 'v1.5',
+        tags: ['SCORM', 'Interactivity', 'Imports'],
         translations: {
           ar: {
             title: 'SCORM والمحتوى التفاعلي',
-            description: 'استيراد ملفات التعلم الإلكتروني المتقدمة من أدوات التأليف الخارجية.'
+            description: 'استيراد ملفات التعلم الإلكتروني المتقدمة من أدوات التأليف الخارجية.',
+            tags: ['سكورم', 'تفاعل', 'استيراد']
           }
         }
       }
@@ -247,10 +264,12 @@ export const docs: DocSection[] = [
     category: 'student',
     icon: 'Medal',
     content: 'How the validation and rewards system works for students.',
+    tags: ['Gamification', 'Engagement', 'Rewards'],
     translations: {
       ar: {
         title: 'الاختبارات والشهادات',
-        content: 'كيف يعمل نظام التحقق والمكافآت للطلاب.'
+        content: 'كيف يعمل نظام التحقق والمكافآت للطلاب.',
+        tags: ['التلعيب', 'التفاعل', 'المكافآت']
       }
     },
     items: [
@@ -258,6 +277,7 @@ export const docs: DocSection[] = [
         id: 'taking-quizzes',
         title: 'Quizzes & Testing',
         description: 'How to complete assessments and earn certificates.',
+        tags: ['Testing', 'Assessment', 'Certification'],
         relatedLinks: [
           { title: 'Certificates Guide', sectionId: 'student-gamification', itemId: 'reward-points' }
         ],
@@ -265,6 +285,7 @@ export const docs: DocSection[] = [
           ar: {
             title: 'الاختبارات والتقييم',
             description: 'كيفية إكمال التقييمات والحصول على الشهادات.',
+            tags: ['اختبار', 'تقييم', 'شهادات'],
             relatedLinks: [
               { title: 'دليل الشهادات' }
             ]
@@ -276,10 +297,12 @@ export const docs: DocSection[] = [
         title: 'Coptogram Rewards',
         description: 'Earning points for consistent spiritual study and redemption.',
         version: 'v1.5',
+        tags: ['Points', 'Redemption', 'Economy'],
         translations: {
           ar: {
             title: 'مكافآت كوبتوجرام',
-            description: 'كسب النقاط مقابل الدراسة الروحية المستمرة واستبدالها.'
+            description: 'كسب النقاط مقابل الدراسة الروحية المستمرة واستبدالها.',
+            tags: ['نقاط', 'استرداد', 'اقتصاد']
           }
         }
       }
@@ -328,10 +351,12 @@ export const docs: DocSection[] = [
     category: 'general',
     icon: 'Users',
     content: 'Engaging with other believers and instructors in a safe community environment.',
+    tags: ['Community', 'Forum', 'Interaction'],
     translations: {
       ar: {
         title: 'المجتمع والمنتدى',
-        content: 'التفاعل مع المؤمنين الآخرين والمحاضرين في بيئة مجتمعية آمنة.'
+        content: 'التفاعل مع المؤمنين الآخرين والمحاضرين في بيئة مجتمعية آمنة.',
+        tags: ['المجتمع', 'المنتدى', 'التفاعل']
       }
     },
     items: [
@@ -339,10 +364,12 @@ export const docs: DocSection[] = [
         id: 'forum-participation',
         title: 'Using the Community Boards',
         description: 'Posting questions and participating in discussions.',
+        tags: ['Discussions', 'Q&A', 'Boards'],
         translations: {
           ar: {
             title: 'استخدام لوحات المجتمع',
-            description: 'نشر الأسئلة والمشاركة في المناقشات.'
+            description: 'نشر الأسئلة والمشاركة في المناقشات.',
+            tags: ['نقاشات', 'سؤال وجواب', 'لوحات']
           }
         }
       }
@@ -354,10 +381,12 @@ export const docs: DocSection[] = [
     category: 'general',
     icon: 'Fingerprint',
     content: 'Coptogram uses a sophisticated Role-Based Access Control (RBAC) system to ensure everyone has the exact tools they need for their specific part in the ministry.',
+    tags: ['Security', 'RBAC', 'Permissions'],
     translations: {
       ar: {
         title: 'أدوار المستخدمين والأذونات',
-        content: 'يستخدم كوبتوجرام نظاماً متطوراً للتحكم في الوصول القائم على الأدوار (RBAC) لضمان حصول الجميع على الأدوات الدقيقة التي يحتاجونها لدورهم المحدد في الخدمة.'
+        content: 'يستخدم كوبتوجرام نظاماً متطوراً للتحكم في الوصول القائم على الأدوار (RBAC) لضمان حصول الجميع على الأدوات الدقيقة التي يحتاجونها لدورهم المحدد في الخدمة.',
+        tags: ['الأمان', 'التحكم في الوصول', 'الأذونات']
       }
     },
     items: [
@@ -595,6 +624,45 @@ export const docs: DocSection[] = [
           'Step 3: On the day of the session, enter the Live Studio 15 minutes early to test your audio/video.',
           'Step 4: Record the session so it automatically appears as a replay for students who missed it.'
         ]
+      }
+    ]
+  },
+  {
+    id: 'component-ui-patterns',
+    title: 'Documentation UI Patterns',
+    category: 'general',
+    icon: 'Layout',
+    content: 'Coptogram documentation supports premium interactive components. Use these patterns to make your spiritual content more engaging and readable.',
+    translations: {
+      ar: {
+        title: 'أنماط واجهة التوثيق',
+        content: 'يدعم توثيق كوبتوجرام مكونات تفاعلية مميزة. استخدم هذه الأنماط لجعل محتواك الروحي أكثر جاذبية وقابلية للقراءة.'
+      }
+    },
+    items: [
+      {
+        id: 'ui-alerts',
+        title: 'Information Alerts',
+        description: `Alerts are perfect for highlighting tips, warnings, or success messages.\n\n<div class='alert info'>This is an information alert. Use it for neutral tips or supplementary data.</div>\n<div class='alert success'>This is a success alert. Use it when a user completes a task or reaches a goal.</div>\n<div class='alert warning'>This is a warning alert. Use it for critical information that requires attention.</div>`,
+        code: `<div class='alert info'>Your message here...</div>\n<div class='alert success'>Task completed successfully!</div>\n<div class='alert warning'>Please back up your data.</div>`
+      },
+      {
+        id: 'ui-quotes',
+        title: 'Quotes & Emphasis',
+        description: `Use blockquotes to highlight spiritual wisdom or key vision statements.\n\n<blockquote class='s1'>\n  "The heart of man is a vast ocean, and only God can fill its depths."\n  <span>Spiritual Wisdom</span>\n</blockquote>`,
+        code: `<blockquote class='s1'>\n  Your profound quote here...\n  <span>Author Name</span>\n</blockquote>`
+      },
+      {
+        id: 'ui-buttons',
+        title: 'Interactive Buttons',
+        description: `Create clear calls to action with styled buttons.\n\n<div class='flex gap-4'>\n  <a class='button' href='#'>Primary Action</a>\n  <a class='button ln' href='#'>Secondary Action</a>\n</div>`,
+        code: `<a class='button' href='URL'>Label</a>\n<a class='button ln' href='URL'>Outline Label</a>`
+      },
+      {
+        id: 'ui-steps',
+        title: 'Interactive Steps',
+        description: `Create dynamic walkthroughs with real-time scroll tracking and progress indicators.\n\n<ol class='steps'>\n  <li>Define your documentation goals.</li>\n  <li>Capture high-quality screenshots and assets.</li>\n  <li>Write clear, concise steps for your audience.</li>\n</ol>`,
+        code: `<ol class='steps'>\n  <li>Step 1 description</li>\n  <li>Step 2 description</li>\n</ol>`
       }
     ]
   }

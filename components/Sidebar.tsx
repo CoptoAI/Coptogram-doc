@@ -27,6 +27,7 @@ import {
   Megaphone,
   Box
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface SidebarProps {
   activeSection: string;
@@ -66,16 +67,23 @@ const iconMap: Record<string, any> = {
 export function Sidebar({ activeSection, onSectionChange, isOpen, onClose, docs }: SidebarProps) {
   return (
     <>
-      <div
-        className={cn(
-          "fixed inset-0 z-20 bg-background/80 backdrop-blur-sm lg:hidden",
-          isOpen ? "block" : "hidden"
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
+            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed inset-0 z-20 bg-background/60 lg:hidden cursor-pointer"
+            onClick={onClose}
+            aria-hidden="true"
+          />
         )}
-        onClick={onClose}
-      />
+      </AnimatePresence>
+
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-[240px] border-r border-border bg-secondary transition-transform duration-300 ease-in-out lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:translate-x-0 lg:block",
+          "fixed inset-y-0 left-0 z-30 w-[240px] border-r border-border bg-secondary transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:translate-x-0 lg:block lg:transition-none shadow-2xl lg:shadow-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

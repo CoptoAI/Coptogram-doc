@@ -189,6 +189,21 @@ export function DocsManager() {
     }
   }, [activeItemId]); // Scroll when item changes or on mount
 
+  const navigateToSection = (id: string | null) => {
+    setActiveSectionId(id);
+    setActiveItemId(null);
+    
+    // Update URL
+    const params = new URLSearchParams(window.location.search);
+    if (id) {
+      params.set('section', id);
+    } else {
+      params.delete('section');
+    }
+    params.delete('item');
+    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <Navbar 
@@ -196,7 +211,7 @@ export function DocsManager() {
         onSearch={setSearchQuery} 
         onThemeColorChange={handleThemeColorChange} 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        onHomeClick={() => setActiveSectionId(null)}
+        onHomeClick={() => navigateToSection(null)}
         language={language}
         onLanguageChange={setLanguage}
       />
@@ -204,7 +219,7 @@ export function DocsManager() {
       {!activeSectionId && !searchQuery ? (
         <main className="flex-1">
           <LandingView 
-            onSectionSelect={setActiveSectionId} 
+            onSectionSelect={navigateToSection} 
             onSearch={setSearchQuery} 
             docs={localizedDocs}
             language={language}
@@ -214,7 +229,7 @@ export function DocsManager() {
         <div className="container mx-auto flex-1 items-start lg:grid lg:grid-cols-[240px_minmax(0,1fr)_200px] lg:gap-10">
           <Sidebar 
             activeSection={activeSectionId || ''} 
-            onSectionChange={setActiveSectionId} 
+            onSectionChange={navigateToSection} 
             isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
             docs={localizedDocs}
@@ -283,7 +298,8 @@ export function DocsManager() {
                   <div className="flex-1">
                     <DocContent 
                       section={activeSection} 
-                      onNavigate={(id) => id === 'home' ? setActiveSectionId(null) : setActiveSectionId(id)} 
+                      onNavigate={(id) => navigateToSection(id === 'home' ? null : id)} 
+                      activeItemId={activeItemId}
                       language={language}
                       onLinkClick={handleResultClick}
                       allDocs={docs}
