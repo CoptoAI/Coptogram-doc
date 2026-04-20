@@ -121,6 +121,17 @@ export function DocContent({
     return items;
   }, [section, activeItemId, language, onNavigate]);
 
+  const { prevSection, nextSection } = React.useMemo(() => {
+    if (!allDocs || !section) return { prevSection: null, nextSection: null };
+    const currentIndex = allDocs.findIndex(s => s.id === section.id);
+    if (currentIndex === -1) return { prevSection: null, nextSection: null };
+
+    return {
+      prevSection: currentIndex > 0 ? allDocs[currentIndex - 1] : null,
+      nextSection: currentIndex < allDocs.length - 1 ? allDocs[currentIndex + 1] : null
+    };
+  }, [allDocs, section]);
+
   // 2. EARLY RETURN AFTER HOOKS
   if (!section || hasError) {
     return (
@@ -813,13 +824,12 @@ export function DocContent({
       {/* Pagination: Previous & Next Section */}
       {allDocs && allDocs.length > 1 && (
         <div className="mt-16 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-          {allDocs.findIndex(s => s.id === section.id) > 0 ? (
+          {prevSection ? (
             <motion.button
               whileHover={{ x: -4 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                const currentIndex = allDocs.findIndex(s => s.id === section.id);
-                onNavigate(allDocs[currentIndex - 1].id);
+                onNavigate(prevSection.id);
                 window.scrollTo(0, 0);
               }}
               className="group flex flex-col items-start gap-1 p-4 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all w-full sm:w-auto sm:min-w-[200px]"
@@ -829,20 +839,19 @@ export function DocContent({
                 {language === 'ar' ? 'السابق' : 'Previous'}
               </div>
               <div className="font-bold text-foreground group-hover:text-primary transition-colors rtl:text-right">
-                {language === 'ar' && allDocs[allDocs.findIndex(s => s.id === section.id) - 1].translations?.ar
-                  ? allDocs[allDocs.findIndex(s => s.id === section.id) - 1].translations.ar.title
-                  : allDocs[allDocs.findIndex(s => s.id === section.id) - 1].title}
+                {language === 'ar' && prevSection.translations?.ar
+                  ? prevSection.translations.ar.title
+                  : prevSection.title}
               </div>
             </motion.button>
           ) : <div className="hidden sm:block" />}
 
-          {allDocs.findIndex(s => s.id === section.id) < allDocs.length - 1 ? (
+          {nextSection ? (
             <motion.button
               whileHover={{ x: 4 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                const currentIndex = allDocs.findIndex(s => s.id === section.id);
-                onNavigate(allDocs[currentIndex + 1].id);
+                onNavigate(nextSection.id);
                 window.scrollTo(0, 0);
               }}
               className="group flex flex-col items-end gap-1 p-4 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all w-full sm:w-auto sm:min-w-[200px] text-end"
@@ -852,9 +861,9 @@ export function DocContent({
                 <ChevronRight className="h-3 w-3" />
               </div>
               <div className="font-bold text-foreground group-hover:text-primary transition-colors ltr:text-right">
-                {language === 'ar' && allDocs[allDocs.findIndex(s => s.id === section.id) + 1].translations?.ar
-                  ? allDocs[allDocs.findIndex(s => s.id === section.id) + 1].translations.ar.title
-                  : allDocs[allDocs.findIndex(s => s.id === section.id) + 1].title}
+                {language === 'ar' && nextSection.translations?.ar
+                  ? nextSection.translations.ar.title
+                  : nextSection.title}
               </div>
             </motion.button>
           ) : <div className="hidden sm:block" />}
