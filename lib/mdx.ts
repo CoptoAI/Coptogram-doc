@@ -6,36 +6,44 @@ import { DocSection, DocItem } from './docs-data';
 const CONTENT_PATH = path.join(process.cwd(), 'content');
 
 export async function getAllDocs(lang: 'en' | 'ar' = 'en'): Promise<DocSection[]> {
-  const langPath = path.join(CONTENT_PATH, lang);
-  
-  if (!fs.existsSync(langPath)) {
+  try {
+    const langPath = path.join(CONTENT_PATH, lang);
+    
+    if (!fs.existsSync(langPath)) {
+      console.warn(`Content path not found: ${langPath}`);
+      return [];
+    }
+
+    const files = fs.readdirSync(langPath).filter(file => file.endsWith('.mdx'));
+    
+    const docs = files.map((file) => {
+      try {
+        const filePath = path.join(langPath, file);
+        const source = fs.readFileSync(filePath, 'utf8');
+        const { data, content } = matter(source);
+        
+        return {
+          id: data.id || file.replace('.mdx', ''),
+          title: data.title || 'Untitled',
+          category: data.category || 'general',
+          icon: data.icon,
+          order: data.order ?? 999,
+          content: content,
+          tags: data.tags || [],
+          items: data.items || [],
+          translations: data.translations
+        } as DocSection;
+      } catch (err) {
+        console.error(`Error reading MDX file ${file}:`, err);
+        return null;
+      }
+    }).filter((doc): doc is DocSection => doc !== null);
+
+    return docs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  } catch (err) {
+    console.error(`Error in getAllDocs for lang ${lang}:`, err);
     return [];
   }
-
-  const files = fs.readdirSync(langPath).filter(file => file.endsWith('.mdx'));
-  
-  const docs = files.map((file) => {
-    const filePath = path.join(langPath, file);
-    const source = fs.readFileSync(filePath, 'utf8');
-    const { data, content } = matter(source);
-    
-    // We need to match the DocSection interface
-    return {
-      id: data.id || file.replace('.mdx', ''),
-      title: data.title,
-      category: data.category || 'general',
-      icon: data.icon,
-      order: data.order ?? 999,
-      content: content,
-      tags: data.tags || [],
-      // For now we'll support nested items if they are in the frontmatter
-      // But in a real MDX architecture, items might also be separate files or sections
-      items: data.items || [],
-      translations: data.translations // Handle existing translations if any
-    } as DocSection;
-  });
-
-  return docs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 export async function getDocById(id: string, lang: 'en' | 'ar' = 'en'): Promise<DocSection | undefined> {

@@ -25,6 +25,7 @@ Before uploading, you must build the project to generate the production-ready fi
     *   Everything inside `.next/standalone` (this includes `server.js`, `package.json`, and `node_modules`).
     *   The `public` folder from your project root into `coptogram-deploy/public`.
     *   The `.next/static` folder from your project into `coptogram-deploy/.next/static`.
+    *   **CRITICAL**: Copy the `content` folder from your project root (which contains the `.mdx` files) into `coptogram-deploy/content`. Without this, the app will return a 500 error as it cannot find the data.
 
 ## Step 3: Upload to Hostinger
 
@@ -41,7 +42,7 @@ Before uploading, you must build the project to generate the production-ready fi
 3.  **Application Root**: Set this to the folder where you uploaded the files (e.g., `/public_html`).
 4.  **Application URL**: Set your domain (e.g., `https://docs.coptogram.com`).
 5.  **Application Startup File**: Set this to `server.js`.
-6.  **Node.js Version**: Select **Version 20.x** (or the latest stable).
+6.  **Node.js Version**: Select **Version 20.x** (or the latest stable). Next.js 15 requires at least Node 18.
 7.  Click **Create/Save**.
 
 ## Step 5: Environment Variables
@@ -50,8 +51,9 @@ Before uploading, you must build the project to generate the production-ready fi
 2.  Add the following:
     *   `PORT`: `3000` (or whatever Hostinger suggests).
     *   `NODE_ENV`: `production`.
-    *   `GEMINI_API_KEY`: Your Google Gemini API Key.
-    *   `NEXT_PUBLIC_GEMINI_API_KEY`: Your Google Gemini API Key (needed for client-side).
+    *   `NEXT_PUBLIC_GA_ID`: Your Google Analytics ID (if any).
+    *   `NEXT_PUBLIC_CLARITY_ID`: Your Microsoft Clarity ID (if any).
+    *   `NEXT_PUBLIC_GEMINI_API_KEY`: Your Google Gemini API Key.
 
 ## Step 6: Database & Firebase
 
