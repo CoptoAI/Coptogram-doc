@@ -10,8 +10,13 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   
-  --font-sans: 'Inter', var(--font-sans);
-  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --font-sans: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cairo), sans-serif;
+  --font-mono: var(--font-mono), monospace;
+}
+
+[dir='rtl'] {
+  --font-sans: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
@@ -42,3 +47,17 @@
 [data-theme='amber'] { --primary: #f59e0b; }
 [data-theme='emerald'] { --primary: #10b981; }
 [data-theme='rose'] { --primary: #f43f5e; }
+
+/* Font Smoothing & Improvements */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+[dir='rtl'] h1, [dir='rtl'] h2, [dir='rtl'] h3, [dir='rtl'] h4, [dir='rtl'] h5, [dir='rtl'] h6 {
+  letter-spacing: 0;
+}
+
+.markdown-body {
+  line-height: 1.625;
+}

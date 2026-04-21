@@ -1,4 +1,4 @@
-import React from 'react';
+import Image from 'next/image';
 import { Callout } from '@/components/ui/Callout';
 import { cn } from '@/lib/utils';
 import { CodeBlock } from '@/components/CodeBlock';
@@ -36,11 +36,39 @@ export const mdxComponents = {
     </div>
   ),
 
+  img: ({ src, alt }: any) => {
+    if (!src) return null;
+    return (
+      <div className="my-8 space-y-3">
+        <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted/20 shadow-lg group">
+          <Image 
+            src={src} 
+            alt={alt || "Documentation image"} 
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+        </div>
+        {alt && (
+          <p className="text-center text-[12px] text-muted-foreground italic font-medium">
+            {alt}
+          </p>
+        )}
+      </div>
+    );
+  },
+
   // HTML Tag Mappings
   h1: ({ children }: any) => <h1 className="text-3xl font-bold tracking-tight mb-4">{children}</h1>,
   h2: ({ children }: any) => <h2 className="text-2xl font-bold tracking-tight mt-10 mb-4 border-b pb-2">{children}</h2>,
   h3: ({ children }: any) => <h3 className="text-xl font-bold tracking-tight mt-8 mb-3">{children}</h3>,
-  p: ({ children }: any) => <p className="leading-7 mb-4 last:mb-0 text-muted-foreground">{children}</p>,
+  p: (props: any) => {
+    // We use a div for paragraphs to avoid hydration issues when and if 
+    // block-level elements (like images or callouts) are nested inside them by the MDX/Markdown parser.
+    const { children, node, ...rest } = props;
+    return <div className="leading-7 mb-4 last:mb-0 text-muted-foreground" {...rest}>{children}</div>;
+  },
   ul: ({ children }: any) => <ul className="list-disc pl-6 mb-4 space-y-2 text-muted-foreground">{children}</ul>,
   ol: ({ children }: any) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-muted-foreground">{children}</ol>,
   li: ({ children }: any) => <li className="leading-normal">{children}</li>,

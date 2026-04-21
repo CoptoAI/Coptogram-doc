@@ -27,6 +27,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { sanitizeSchema } from '@/lib/markdown-config';
 
@@ -195,7 +196,7 @@ export function DocContent({
     return url;
   };
 
-  const CustomIframe = ({ src, title, ...props }: any) => {
+  const CustomIframe = ({ src, title, node, ...props }: any) => {
     const [iframeError, setIframeError] = React.useState(false);
     const isYouTube = src?.includes('youtube.com') || src?.includes('youtu.be');
     
@@ -206,16 +207,18 @@ export function DocContent({
       console.error("Failed to parse YouTube URL:", e);
     }
     
-    if (iframeError) {
+    if (!src || iframeError) {
       return (
         <div className="flex flex-col items-center justify-center aspect-video w-full my-8 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
           <AlertTriangle className="h-10 w-10 mb-2 opacity-50" />
           <p className="text-sm font-medium">
-            {language === 'ar' ? 'فشل تحميل المحتوى الخارجي' : 'External content failed to load'}
+            {!src ? (language === 'ar' ? 'مصدر المحتوى مفقود' : 'Content source missing') : (language === 'ar' ? 'فشل تحميل المحتوى الخارجي' : 'External content failed to load')}
           </p>
-          <a href={src} target="_blank" rel="noopener noreferrer" className="mt-4 text-[12px] text-primary hover:underline">
-             {language === 'ar' ? 'افتح في نافذة جديدة' : 'Open in a new window'}
-          </a>
+          {src && (
+            <a href={src} target="_blank" rel="noopener noreferrer" className="mt-4 text-[12px] text-primary hover:underline">
+               {language === 'ar' ? 'افتح في نافذة جديدة' : 'Open in a new window'}
+            </a>
+          )}
         </div>
       );
     }
@@ -235,14 +238,16 @@ export function DocContent({
     );
   };
 
-  const CustomVideo = ({ src, ...props }: any) => {
+  const CustomVideo = ({ src, node, ...props }: any) => {
     const [videoError, setVideoError] = React.useState(false);
 
-    if (videoError) {
+    if (!src || videoError) {
       return (
         <div className="flex flex-col items-center justify-center py-10 my-8 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
            <AlertTriangle className="h-10 w-10 mb-2 opacity-50" />
-           <p className="text-sm font-medium">{language === 'ar' ? 'فشل تشغيل الفيديو' : 'Video playback failed'}</p>
+           <p className="text-sm font-medium">
+             {!src ? (language === 'ar' ? 'مصدر الفيديو مفقود' : 'Video source missing') : (language === 'ar' ? 'فشل تشغيل الفيديو' : 'Video playback failed')}
+           </p>
         </div>
       );
     }
@@ -401,7 +406,7 @@ export function DocContent({
   };
 
   const MarkdownComponents = {
-    a: ({ href, children, className, ...props }: any) => {
+    a: ({ href, children, className, node, ...props }: any) => {
       // 1. Internal Platform Links (docs://)
       if (href?.startsWith('docs://')) {
         const path = href.replace('docs://', '').split('/');
@@ -481,7 +486,7 @@ export function DocContent({
         </a>
       );
     },
-    blockquote: ({ children, className }: any) => {
+    blockquote: ({ children, className, node, ...props }: any) => {
       const isS1 = className?.includes('s1');
       const isS2 = className?.includes('s2');
       
@@ -490,13 +495,13 @@ export function DocContent({
           "relative my-10 p-8 rounded-2xl border-l-4 border-primary bg-muted/30 italic text-lg leading-relaxed text-foreground/90",
           isS1 && "bg-primary/5 border-l-8 border-primary/40 rounded-e-3xl",
           isS2 && "border-l-0 border-t-4 border-primary bg-background shadow-xl scale-105 my-14"
-        )}>
+        )} {...props}>
           <div className="relative z-10">{children}</div>
           <span className="absolute -top-4 -left-2 text-6xl text-primary/10 select-none font-serif">&ldquo;</span>
         </blockquote>
       );
     },
-    p: ({ children, className, ...props }: any) => {
+    p: ({ children, className, node, ...props }: any) => {
       if (className?.includes('note')) {
         const isWarning = className.includes('wr');
         return (
@@ -505,7 +510,7 @@ export function DocContent({
             isWarning 
               ? "bg-amber-500/5 border-amber-500 text-amber-900 dark:text-amber-200" 
               : "bg-blue-500/5 border-blue-500 text-blue-900 dark:text-blue-200"
-          )}>
+          )} {...props}>
             <div className="shrink-0 mt-1">
               {isWarning ? <AlertTriangle className="h-5 w-5" /> : <Info className="h-5 w-5" />}
             </div>
@@ -513,9 +518,9 @@ export function DocContent({
           </div>
         );
       }
-      return <p {...props}>{children}</p>;
+      return <div className={cn("leading-7 mb-4 last:mb-0", className)} {...props}>{children}</div>;
     },
-    div: ({ children, className, ...props }: any) => {
+    div: ({ children, className, node, ...props }: any) => {
       // Alert Component Handling
       if (className?.includes('alert')) {
         const isSuccess = className.includes('success');
@@ -609,7 +614,7 @@ export function DocContent({
         );
       }
 
-      return <div className={className} {...props}>{children}</div>;
+      return <div className={className} {...(props as any).node ? { ...props, node: undefined } : props}>{children}</div>;
     },
     table: ({ children, className }: any) => (
       <div className={cn(
@@ -643,7 +648,29 @@ export function DocContent({
       return <ol className="list-decimal pl-6 my-6 space-y-3">{children}</ol>;
     },
     iframe: CustomIframe,
-    video: CustomVideo
+    video: CustomVideo,
+    img: ({ src, alt, title }: any) => {
+      if (!src) return null;
+      return (
+        <div className="my-8 space-y-3">
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted/20 shadow-lg group">
+            <Image 
+              src={src} 
+              alt={alt || "Documentation screenshot"} 
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+          </div>
+          {alt && (
+            <p className="text-center text-[12px] text-muted-foreground italic font-medium">
+              {alt}
+            </p>
+          )}
+        </div>
+      );
+    }
   };
 
   return (
@@ -652,12 +679,12 @@ export function DocContent({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="mx-auto max-w-6xl px-4 py-8 lg:px-8"
+      className="w-full px-4 py-8 lg:px-8"
     >
       <Breadcrumbs items={breadcrumbItems} className="mb-6" />
 
-      <div id="main-content" className="flex flex-col lg:flex-row gap-12 items-start">
-        <div className="flex-1 min-w-0 order-2 lg:order-1">
+      <div className="flex flex-col gap-12 items-start">
+        <div className="flex-1 min-w-0">
           <h1 className="text-[32px] font-bold tracking-tight text-foreground mb-3 text-start">
             {(language === 'ar' && section.translations?.ar) ? section.translations.ar.title : section.title}
           </h1>
@@ -805,11 +832,7 @@ export function DocContent({
         ))}
       </div>
     </div>
-
-        <aside className="w-full lg:w-64 shrink-0 order-1 lg:order-2 lg:sticky lg:top-24">
-          <DocTOC items={section.items || []} language={language} />
-        </aside>
-      </div>
+  </div>
 
       {/* Pagination: Previous & Next Section */}
       {allDocs && allDocs.length > 1 && (

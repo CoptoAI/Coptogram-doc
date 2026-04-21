@@ -19,15 +19,20 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   
   const docs = await getUnifiedDocs();
 
-  const baseTitle = isArabic ? 'توثيق كوبتوجرام' : 'Coptogram Documentation';
+  const baseTitle = isArabic ? 'كوبتوجرام | المركز التعليمي' : 'Coptogram | Learning Center';
   const baseDescription = isArabic 
-    ? 'الدليل الكامل لمنصة كوبتوجرام - تعلم كيفية إدارة خدمتك والنمو روحياً.' 
-    : 'The complete guide to the Coptogram Platform - learn how to manage your ministry and grow spiritually.';
+    ? 'اكتشف كيف يمكنك إدارة خدمتك بكفاءة والنمو روحياً من خلال توثيق منصة كوبتوجرام الشامل.' 
+    : 'Discover how to manage your ministry efficiently and grow spiritually with the comprehensive Coptogram Platform documentation.';
+
+  const localizedKeywords = isArabic 
+    ? ['كوبتوجرام', 'إدارة الكنيسة', 'خدمة رقمية', 'أرثوذكس', 'توثيق', 'دليل', 'تعلم']
+    : ['Coptogram', 'Church Management', 'Digital Ministry', 'Orthodox', 'Documentation', 'Guide', 'Learn'];
 
   if (!sectionId) {
     return {
       title: baseTitle,
       description: baseDescription,
+      keywords: localizedKeywords.join(', '),
     };
   }
 
@@ -69,8 +74,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
   return {
     title: `${title} | ${baseTitle}`,
-    description: `${finalDescription}...`,
-    keywords: ['Coptogram', 'Church Management', 'Digital Ministry', title, section.title].join(', '),
+    description: finalDescription,
+    keywords: [...localizedKeywords, title, section.title].join(', '),
     openGraph: {
       title: `${title} | Coptogram Docs`,
       description: finalDescription,

@@ -21,18 +21,20 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
   const [mounted, setMounted] = React.useState(false);
   const [searchFocused, setSearchFocused] = React.useState(false);
   const [showColorPicker, setShowColorPicker] = React.useState(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const [isMac, setIsMac] = React.useState(false);
 
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
+    setIsMac(typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0);
   }, []);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
-        searchInput?.focus();
+        searchInputRef.current?.focus();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -87,10 +89,11 @@ export function Navbar({ searchQuery, onSearch, onThemeColorChange, onToggleSide
               searchFocused ? "text-primary" : "text-muted-foreground"
             )} aria-hidden="true" />
             <input
-              type="text"
+              ref={searchInputRef}
+              type="search"
               value={searchQuery}
-              placeholder={language === 'ar' ? "ابحث في المستندات (Ctrl+K)" : "Search documentation (Ctrl+K)"}
-              aria-label={language === 'ar' ? "البحث في المستندات. استخدم Ctrl plus K للتركيز على البحث." : "Search documentation. Use Ctrl plus K to focus search."}
+              placeholder={language === 'ar' ? `ابحث في المستندات (${isMac ? '⌘K' : 'Ctrl+K'})` : `Search documentation (${isMac ? '⌘K' : 'Ctrl+K'})`}
+              aria-label={language === 'ar' ? "البحث في المستندات. استخدم اختصار لوحة المفاتيح للتركيز على البحث." : "Search documentation. Use keyboard shortcut to focus search."}
               className={cn(
                 "h-8 w-full rounded-md border bg-muted py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all",
                 language === 'ar' ? "ps-4 pe-9" : "ps-9 pe-8",

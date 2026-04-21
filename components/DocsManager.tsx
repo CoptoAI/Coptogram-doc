@@ -11,6 +11,7 @@ import { LandingView } from '@/components/LandingView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import Fuse from 'fuse.js';
+import { cn } from '@/lib/utils';
 
 interface DocsManagerProps {
   docs: DocSection[];
@@ -111,16 +112,21 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
       content: string; 
       titleAr: string;
       contentAr: string;
-      type: 'section' | 'item' 
+      type: 'section' | 'item';
+      sectionTitle?: string;
+      sectionTitleAr?: string;
     }[] = [];
     
     docsData.forEach(section => {
       // Add section itself
+      const sectionTitle = section.title;
+      const sectionTitleAr = section.translations?.ar?.title || '';
+
       items.push({
         sectionId: section.id,
-        title: section.title,
+        title: sectionTitle,
         content: section.content,
-        titleAr: section.translations?.ar?.title || '',
+        titleAr: sectionTitleAr,
         contentAr: section.translations?.ar?.content || '',
         type: 'section'
       });
@@ -134,7 +140,9 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
           content: `${item.description} ${item.details?.join(' ') || ''}`,
           titleAr: item.translations?.ar?.title || '',
           contentAr: `${item.translations?.ar?.description || ''} ${item.translations?.ar?.details?.join(' ') || ''}`,
-          type: 'item'
+          type: 'item',
+          sectionTitle: sectionTitle,
+          sectionTitleAr: sectionTitleAr
         });
       });
     });
@@ -145,20 +153,57 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
   // Fuse.js instance with enhanced scoring and multi-language support
   const fuse = React.useMemo(() => new Fuse(searchableItems, {
     keys: [
-      { name: 'title', weight: 1.0 },
-      { name: 'titleAr', weight: 1.0 },
+      { name: 'title', weight: 1.5 },
+      { name: 'titleAr', weight: 1.5 },
+      { name: 'sectionTitle', weight: 0.8 },
+      { name: 'sectionTitleAr', weight: 0.8 },
       { name: 'content', weight: 0.4 },
       { name: 'contentAr', weight: 0.4 }
     ],
-    threshold: 0.25, // Lower means stricter, higher means fuzzier
+    threshold: 0.35, // Balanced fuzziness
     location: 0,
     distance: 100,
     minMatchCharLength: 2,
     includeScore: true,
+    includeMatches: true, // Needed for highlighting
     useExtendedSearch: true,
     findAllMatches: true,
-    ignoreLocation: false // Better for specific keyword searches
+    ignoreLocation: false
   }), [searchableItems]);
+
+  // Simple highlighting function
+  const highlightText = (text: string, matches: readonly any[] | undefined, key: string) => {
+    if (!matches || !text) return text;
+    
+    const match = matches.find(m => m.key === key);
+    if (!match) return text;
+
+    // Sort indices and handle overlapping/adjacent matches
+    const indices = [...match.indices].sort((a, b) => a[0] - b[0]);
+    
+    let result: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    indices.forEach(([start, end], i) => {
+      // Normal text before match
+      if (start > lastIndex) {
+        result.push(text.slice(lastIndex, start));
+      }
+      // Highlighted text
+      result.push(
+        <mark key={i} className="bg-primary/20 text-primary rounded-sm px-0.5 border-b border-primary/30">
+          {text.slice(start, end + 1)}
+        </mark>
+      );
+      lastIndex = end + 1;
+    });
+
+    if (lastIndex < text.length) {
+      result.push(text.slice(lastIndex));
+    }
+
+    return result;
+  };
 
   // Search results calculation using Fuse.js
   const searchResults = React.useMemo(() => {
@@ -166,24 +211,28 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
 
     return fuse.search(searchQuery)
       .map(result => {
-        // Find the localized title for the result display
-        let displayTitle = result.item.title;
-        if (language === 'ar' && result.item.titleAr) {
-          displayTitle = result.item.titleAr;
-        }
+        const isAr = language === 'ar';
+        const titleKey = isAr ? 'titleAr' : 'title';
+        const sectionTitleKey = isAr ? 'sectionTitleAr' : 'sectionTitle';
+
+        let displayTitle = result.item[titleKey];
+        let displaySectionTitle = result.item[sectionTitleKey];
 
         return {
           sectionId: result.item.sectionId,
           itemId: result.item.itemId,
           title: displayTitle,
+          highlightedTitle: highlightText(displayTitle, result.matches, titleKey),
+          sectionTitle: displaySectionTitle,
+          highlightedSectionTitle: displaySectionTitle ? highlightText(displaySectionTitle, result.matches, sectionTitleKey) : null,
           matchType: result.item.type,
           score: result.score
         };
       })
-      .slice(0, 8);
+      .slice(0, 10);
   }, [searchQuery, fuse, language]);
 
-  const handleResultClick = (sectionId: string, itemId?: string) => {
+  const handleResultClick = React.useCallback((sectionId: string, itemId?: string) => {
     setActiveSectionId(sectionId);
     setActiveItemId(itemId || null);
     setSearchQuery('');
@@ -193,7 +242,7 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
         if (el) el.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
-  };
+  }, []);
 
   // Handle initial scroll to item if present in URL
   React.useEffect(() => {
@@ -205,7 +254,7 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
     }
   }, [activeItemId]); // Scroll when item changes or on mount
 
-  const navigateToSection = (id: string | null) => {
+  const navigateToSection = React.useCallback((id: string | null) => {
     setActiveSectionId(id);
     setActiveItemId(null);
     
@@ -218,7 +267,65 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
     }
     params.delete('item');
     window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-  };
+  }, []);
+
+  // Keyboard Navigation Shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in inputs or search
+      if (
+        e.target instanceof HTMLInputElement || 
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement).isContentEditable
+      ) {
+        return;
+      }
+
+      const activeId = activeSectionId || docsData[0]?.id;
+
+      // Navigate Items (Ctrl/Cmd + Arrows)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        const section = docsData.find(s => s.id === activeId);
+        if (!section || !section.items || section.items.length === 0) return;
+
+        e.preventDefault();
+        const currentIndex = section.items.findIndex(item => item.id === activeItemId);
+        let nextIndex = currentIndex;
+
+        if (e.key === 'ArrowDown') {
+          nextIndex = currentIndex === -1 ? 0 : Math.min(section.items.length - 1, currentIndex + 1);
+        } else if (e.key === 'ArrowUp') {
+          nextIndex = currentIndex === -1 ? 0 : Math.max(0, currentIndex - 1);
+        }
+
+        if (nextIndex !== currentIndex && nextIndex !== -1) {
+          handleResultClick(section.id, section.items[nextIndex].id);
+        }
+        return;
+      }
+
+      // Navigate Sections (ArrowUp / ArrowDown)
+      if (!e.ctrlKey && !e.metaKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.preventDefault();
+        const currentIndex = docsData.findIndex(s => s.id === activeSectionId);
+        let nextIndex = currentIndex;
+
+        if (e.key === 'ArrowDown') {
+          nextIndex = currentIndex === -1 ? 0 : Math.min(docsData.length - 1, currentIndex + 1);
+        } else if (e.key === 'ArrowUp') {
+          nextIndex = currentIndex === -1 ? 0 : Math.max(0, currentIndex - 1);
+        }
+
+        if (nextIndex !== currentIndex && nextIndex !== -1) {
+          const nextSection = docsData[nextIndex];
+          if (nextSection) navigateToSection(nextSection.id);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeSectionId, activeItemId, docsData, handleResultClick, navigateToSection]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -259,7 +366,14 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
             language={language}
           />
           
-          <main id="main-content" className="relative py-6 lg:gap-10 lg:py-8 lg:pl-4 min-h-[calc(100vh-3.5rem)]" tabIndex={-1}>
+          <main 
+            id="main-content" 
+            className={cn(
+              "relative py-6 lg:gap-10 lg:py-8 lg:px-4 min-h-[calc(100vh-3.5rem)]",
+              searchQuery ? "lg:col-span-2" : ""
+            )} 
+            tabIndex={-1}
+          >
             <AnimatePresence mode="wait">
               {searchQuery ? (
                 <motion.div
@@ -294,14 +408,22 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
                             onClick={() => handleResultClick(result.sectionId, result.itemId)}
                           >
                             <div>
-                              <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                              <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1 flex items-center gap-1.5 flex-wrap">
                                 {result.matchType === 'section' 
                                   ? (language === 'ar' ? 'قسم التوثيق' : 'Documentation Section') 
                                   : (language === 'ar' ? 'عنصر مرجعي' : 'Reference Item')}
-                                {idx < 3 && <Sparkles className="h-3 w-3" aria-hidden="true" />}
+                                {result.sectionTitle && (
+                                  <>
+                                    <span className="text-muted-foreground/40">•</span>
+                                    <span className="text-muted-foreground normal-case">
+                                      {result.highlightedSectionTitle || result.sectionTitle}
+                                    </span>
+                                  </>
+                                )}
+                                {idx < 3 && <Sparkles className="h-3 w-3 animate-pulse" aria-hidden="true" />}
                               </div>
-                              <div className="text-lg font-bold group-hover:text-primary transition-colors">
-                                {result.title}
+                              <div className="text-lg font-bold group-hover:text-primary transition-colors leading-tight">
+                                {result.highlightedTitle || result.title}
                               </div>
                             </div>
                             <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180" aria-hidden="true" />
@@ -321,24 +443,25 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
                   )}
                 </motion.div>
               ) : (
-                <div className="flex flex-col xl:flex-row lg:gap-10">
-                  <div className="flex-1">
-                    <DocContent 
-                      section={activeSection} 
-                      onNavigate={(id) => navigateToSection(id === 'home' ? null : id)} 
-                      activeItemId={activeItemId}
-                      language={language}
-                      onLinkClick={handleResultClick}
-                      allDocs={docsData}
-                    >
-                      {children}
-                    </DocContent>
-                  </div>
-                  <TableOfContents items={activeSection.items || []} language={language} />
-                </div>
+                <DocContent 
+                  section={activeSection} 
+                  onNavigate={(id) => navigateToSection(id === 'home' ? null : id)} 
+                  activeItemId={activeItemId}
+                  language={language}
+                  onLinkClick={handleResultClick}
+                  allDocs={docsData}
+                >
+                  {children}
+                </DocContent>
               )}
             </AnimatePresence>
           </main>
+
+          {!searchQuery && activeSectionId && (
+            <aside className="hidden lg:block lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:py-8 overflow-y-auto">
+              <TableOfContents items={activeSection?.items || []} language={language} />
+            </aside>
+          )}
         </div>
       )}
     </div>

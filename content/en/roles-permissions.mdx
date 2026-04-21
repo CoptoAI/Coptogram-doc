@@ -1,0 +1,46 @@
+---
+id: user-roles
+title: Roles & Permissions
+category: organization
+icon: ShieldCheck
+order: 3
+tags: ["Security", "AccessControl", "Roles"]
+items:
+  - id: admin-role
+    title: Platform Administrator
+    description: |
+      Full control over the entire system, including financial data, payment gateways, and global settings.
+  - id: organization-role
+    title: Organizational Role (B2B)
+    description: |
+      A specialized role for Church or Diocese leaders to manage their own instructors, students, and course availability.
+      - **Multi-tenant isolation**: Organizations operate in their own secure environment.
+      - **Private Pricing**: Ability to set student-specific pricing for ministry members.
+  - id: instructor-role
+    title: Content Creator / Instructor
+    description: |
+      Permissions to create, manage, and deliver courses. Instructors can track student progress and grade assignments.
+  - id: student-role
+    title: Student / Member
+    description: |
+      End-user role focused on consuming content, participating in live sessions, and completing assessments.
+---
+
+# Roles and Permissions
+
+Coptogram uses a robust Role-Based Access Control (RBAC) system to ensure that every participant has the exact permissions they need to fulfill their mission.
+
+<Callout type="info">
+  The system supports multi-tenant isolation, allowing large organizations like Dioceses to manage separate sub-ministries under one umbrella.
+</Callout>
+
+## The Organizational Architecture
+
+The **Organization Role** is designed for centralized management. When an entity is registered as an Organization, it gains the power to:
+1. **Delegated Administration**: Assign managers to specific modules.
+2. **Branding Control**: Enforce identity across all sub-portals.
+3. **Advanced Reporting**: Access aggregated analytics for all affiliated students.
+
+<div className="alert success">
+  **Organization accounts** can also benefit from B2B pricing models and bulk enrollment tools.
+</div>
