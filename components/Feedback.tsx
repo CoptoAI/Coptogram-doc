@@ -4,8 +4,6 @@ import * as React from 'react';
 import { ThumbsUp, ThumbsDown, CheckCircle2, Loader2, Send, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 interface FeedbackProps {
   language?: 'en' | 'ar';
@@ -36,15 +34,19 @@ export function Feedback({ language = 'en', sectionId, itemId }: FeedbackProps) 
     setIsSubmitting(true);
     setErrorMsg(null);
     try {
-      await addDoc(collection(db, 'feedback'), {
+      // Mock local submission
+      console.log('Feedback submitted locally (GitHub managed mode):', {
         type,
         comment,
         sectionId: sectionId || 'none',
         itemId: itemId || 'none',
         language,
-        timestamp: serverTimestamp(),
+        timestamp: new Date().toISOString(),
         page: window.location.href
       });
+      
+      // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 800));
       setIsDone(true);
     } catch (error: any) {
       console.error('Error submitting feedback:', error);

@@ -2,9 +2,7 @@
 
 import * as React from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { docs as staticDocs, DocSection, DocItem } from '@/lib/docs-data';
+import { docs as staticDocs, DocSection } from '@/lib/docs-data';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { DocContent } from '@/components/DocContent';
@@ -28,47 +26,17 @@ export function DocsManager() {
   const [themeColor, setThemeColor] = React.useState('default');
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [language, setLanguage] = React.useState<'en' | 'ar'>(langParam === 'ar' ? 'ar' : 'en');
-  const [docsData, setDocsData] = React.useState<DocSection[]>(staticDocs);
-  const [isDataLoaded, setIsDataLoaded] = React.useState(false);
-  const [siteConfig, setSiteConfig] = React.useState<any>(null);
-
-  // Load from Firestore
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch Config
-        const configSnapshot = await getDocs(query(collection(db, 'config')));
-        const landingConfig = configSnapshot.docs.find(d => d.id === 'landing')?.data();
-        if (landingConfig) setSiteConfig(landingConfig);
-
-        const q = query(collection(db, 'sections'), orderBy('order', 'asc'));
-        const snapshot = await getDocs(q);
-        
-        if (snapshot.empty) {
-          setIsDataLoaded(true);
-          return;
-        }
-
-        const sectionsList: DocSection[] = [];
-        for (const sectionDoc of snapshot.docs) {
-          const sectionData = sectionDoc.data() as DocSection;
-          // Subcollection
-          const itemsQ = query(collection(db, `sections/${sectionDoc.id}/items`), orderBy('order', 'asc'));
-          const itemsSnapshot = await getDocs(itemsQ);
-          sectionData.items = itemsSnapshot.docs.map(d => d.data() as DocItem);
-          sectionsList.push(sectionData);
-        }
-        
-        setDocsData(sectionsList);
-        setIsDataLoaded(true);
-      } catch (error) {
-        console.error('Firestore fetch error:', error);
-        setIsDataLoaded(true); // Fallback to static
+  const [docsData] = React.useState<DocSection[]>(staticDocs);
+  const [siteConfig] = React.useState<any>({
+    heroTitle: 'Coptogram Learning Docs',
+    heroSubtitle: 'Master spiritual knowledge with our comprehensive guides and resources.',
+    translations: {
+      ar: {
+        heroTitle: 'وثائق كوبتوغرام التعليمية',
+        heroSubtitle: 'أتقن المعرفة الروحية من خلال أدلتنا ومواردنا الشاملة.'
       }
-    };
-    
-    fetchData();
-  }, []);
+    }
+  });
 
   // Sync state with URL
   React.useEffect(() => {
