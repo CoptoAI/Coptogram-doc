@@ -26,6 +26,10 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" suppressHydrationWarning className={`${cairo.variable} ${jetbrainsMono.variable}`}>
       <head>
+        {/* Resource Hints for Performance */}
+        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://www.clarity.ms" crossOrigin="anonymous" />
+        
         {/* Google Analytics */}
         {process.env.NEXT_PUBLIC_GA_ID && (
           <>
@@ -61,20 +65,6 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                // Defensive check for fetch property restrictions
-                const fetchDescriptor = Object.getOwnPropertyDescriptor(window, 'fetch');
-                if (fetchDescriptor && fetchDescriptor.configurable) {
-                  const originalFetch = window.fetch;
-                  Object.defineProperty(window, 'fetch', {
-                    get: function() { return originalFetch; },
-                    set: function(v) { console.warn('Ignoring attempt to overwrite fetch', v); },
-                    configurable: true,
-                    enumerable: true
-                  });
-                } else if (fetchDescriptor && !fetchDescriptor.writable && !fetchDescriptor.set) {
-                   console.warn('Fetch property is non-configurable and read-only. Scripts attempting to overwrite it will fail.');
-                }
-
                 // Global error mitigation for known benign issues in specific environments
                 window.addEventListener('error', (event) => {
                   if (

@@ -1,7 +1,12 @@
-import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { Callout } from '@/components/ui/Callout';
 import { cn } from '@/lib/utils';
-import { CodeBlock } from '@/components/CodeBlock';
+
+const CodeBlock = dynamic(() => import('@/components/CodeBlock').then(mod => mod.CodeBlock), {
+  loading: () => <div className="h-40 w-full animate-pulse bg-muted rounded-lg my-6" />
+});
+
+import Image from 'next/image';
 
 // Define the components used in MDX
 export const mdxComponents = {
@@ -45,6 +50,7 @@ export const mdxComponents = {
             src={src} 
             alt={alt || "Documentation image"} 
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 1024px"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             referrerPolicy="no-referrer"
           />
