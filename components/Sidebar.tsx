@@ -87,13 +87,11 @@ export function Sidebar({ activeSection, onSectionChange, isOpen, onClose, docs,
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 z-20 bg-background/60 lg:hidden cursor-pointer"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-20 bg-black/40 backdrop-blur-sm lg:hidden"
             onClick={onClose}
-            aria-hidden="true"
           />
         )}
       </AnimatePresence>

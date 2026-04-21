@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { Suspense } from 'react';
 import { Metadata } from 'next';
-import { docs } from '@/lib/docs-data';
+import { getUnifiedDocs, getDocById } from '@/lib/mdx';
 import { DocsManager } from '@/components/DocsManager';
+import { MDXRemote } from 'next-mdx-remote/rsc';
+import { mdxComponents } from '@/lib/mdx-components';
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -12,8 +14,10 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const resolvedParams = await searchParams;
   const sectionId = resolvedParams.section as string;
   const itemId = resolvedParams.item as string;
-  const lang = resolvedParams.lang as string;
+  const lang = (resolvedParams.lang as string) === 'ar' ? 'ar' : 'en';
   const isArabic = lang === 'ar';
+  
+  const docs = await getUnifiedDocs();
 
   const baseTitle = isArabic ? 'توثيق كوبتوجرام' : 'Coptogram Documentation';
   const baseDescription = isArabic 
@@ -76,10 +80,26 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   };
 }
 
-export default function Home() {
+export default async function Home({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  const sectionId = (resolvedParams.section as string) || 'overview';
+  const lang = (resolvedParams.lang as string) === 'ar' ? 'ar' : 'en';
+
+  const [docs, activeSection] = await Promise.all([
+    getUnifiedDocs(),
+    getDocById(sectionId, lang)
+  ]);
+  
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Loading Coptogram Docs...</div>}>
-      <DocsManager />
+      <DocsManager docs={docs}>
+        {activeSection && (
+          <MDXRemote 
+            source={activeSection.content} 
+            components={mdxComponents} 
+          />
+        )}
+      </DocsManager>
     </Suspense>
   );
 }

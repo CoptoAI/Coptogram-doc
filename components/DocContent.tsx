@@ -37,6 +37,7 @@ interface DocContentProps {
   onLinkClick?: (sectionId: string, itemId?: string) => void;
   allDocs: DocSection[];
   activeItemId?: string | null;
+  children?: React.ReactNode;
 }
 
 export function DocContent({ 
@@ -45,7 +46,8 @@ export function DocContent({
   language = 'en', 
   onLinkClick, 
   allDocs,
-  activeItemId 
+  activeItemId,
+  children
 }: DocContentProps) {
   // 1. ALL HOOKS AT THE TOP LEVEL
   
@@ -675,13 +677,15 @@ export function DocContent({
           )}
 
           <div className="markdown-body prose dark:prose-invert max-w-none text-muted-foreground mb-8 text-start">
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]} 
-              rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-              components={MarkdownComponents}
-            >
-              {linkify((language === 'ar' && section.translations?.ar) ? section.translations.ar.content : section.content)}
-            </ReactMarkdown>
+            {children || (
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]} 
+                rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+                components={MarkdownComponents}
+              >
+                {linkify((language === 'ar' && section.translations?.ar) ? section.translations.ar.content : section.content)}
+              </ReactMarkdown>
+            )}
           </div>
 
           {section.id === 'overview' && (

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { docs as staticDocs, DocSection } from '@/lib/docs-data';
+import { DocSection } from '@/lib/docs-data';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { DocContent } from '@/components/DocContent';
@@ -12,7 +12,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import Fuse from 'fuse.js';
 
-export function DocsManager() {
+interface DocsManagerProps {
+  docs: DocSection[];
+  children?: React.ReactNode;
+}
+
+export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -26,7 +31,7 @@ export function DocsManager() {
   const [themeColor, setThemeColor] = React.useState('default');
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [language, setLanguage] = React.useState<'en' | 'ar'>(langParam === 'ar' ? 'ar' : 'en');
-  const [docsData] = React.useState<DocSection[]>(staticDocs);
+  const [docsData] = React.useState<DocSection[]>(initialDocs);
   const [siteConfig] = React.useState<any>({
     heroTitle: 'Coptogram Learning Docs',
     heroSubtitle: 'Master spiritual knowledge with our comprehensive guides and resources.',
@@ -325,7 +330,9 @@ export function DocsManager() {
                       language={language}
                       onLinkClick={handleResultClick}
                       allDocs={docsData}
-                    />
+                    >
+                      {children}
+                    </DocContent>
                   </div>
                   <TableOfContents items={activeSection.items || []} language={language} />
                 </div>
