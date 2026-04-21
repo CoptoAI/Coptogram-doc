@@ -1,13 +1,15 @@
 import { MetadataRoute } from 'next';
 
+export const dynamic = 'force-static';
+
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://ais-dev-ow2tvuurl3gfgq577uqwqk-490349773237.europe-west2.run.app';
+  const baseUrl = 'https://docs.coptogram.com';
   
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/api/',
+      disallow: '/admin/',
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   };

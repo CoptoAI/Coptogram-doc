@@ -16,22 +16,26 @@ import { cn } from '@/lib/utils';
 interface DocsManagerProps {
   docs: DocSection[];
   children?: React.ReactNode;
+  initialLang?: 'en' | 'ar';
+  initialSectionId?: string;
+  initialItemId?: string;
 }
 
-export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
-  const searchParams = useSearchParams();
+export function DocsManager({ 
+  docs: initialDocs, 
+  children,
+  initialLang = 'en',
+  initialSectionId = undefined,
+  initialItemId = undefined
+}: DocsManagerProps) {
   const router = useRouter();
 
-  const sectionParam = searchParams.get('section');
-  const itemParam = searchParams.get('item');
-  const langParam = searchParams.get('lang') as 'en' | 'ar' | null;
-
-  const [activeSectionId, setActiveSectionId] = React.useState<string | null>(sectionParam);
-  const [activeItemId, setActiveItemId] = React.useState<string | null>(itemParam);
+  const [activeSectionId, setActiveSectionId] = React.useState<string | null>(initialSectionId ?? null);
+  const [activeItemId, setActiveItemId] = React.useState<string | null>(initialItemId ?? null);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [themeColor, setThemeColor] = React.useState('default');
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-  const [language, setLanguage] = React.useState<'en' | 'ar'>(langParam === 'ar' ? 'ar' : 'en');
+  const [language, setLanguage] = React.useState<'en' | 'ar'>(initialLang);
   const [docsData] = React.useState<DocSection[]>(initialDocs);
   const [siteConfig] = React.useState<any>({
     heroTitle: 'Coptogram Learning Docs',
@@ -44,31 +48,19 @@ export function DocsManager({ docs: initialDocs, children }: DocsManagerProps) {
     }
   });
 
-  // Sync state with URL
+  // Sync state with URL using path segments for SSG compatibility
   React.useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    
+    let path = `/${language}`;
     if (activeSectionId) {
-      params.set('section', activeSectionId);
-    } else {
-      params.delete('section');
-    }
-
-    if (activeItemId) {
-      params.set('item', activeItemId);
-    } else {
-      params.delete('item');
+      path += `/${activeSectionId}`;
+      if (activeItemId) {
+        path += `/${activeItemId}`;
+      }
     }
     
-    if (language === 'ar') {
-      params.set('lang', 'ar');
-    } else {
-      params.delete('lang');
-    }
-
-    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-    window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
-  }, [activeSectionId, activeItemId, language, searchParams]);
+    // Use replaceState to keep the URL clean without refreshing the whole page
+    window.history.replaceState({ ...window.history.state, as: path, url: path }, '', path);
+  }, [activeSectionId, activeItemId, language]);
 
   const localizedDocs = React.useMemo(() => {
     return docsData.map(section => {

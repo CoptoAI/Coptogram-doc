@@ -1,20 +1,43 @@
 import * as React from 'react';
 import { Suspense } from 'react';
 import { Metadata } from 'next';
-import { getUnifiedDocs, getDocById } from '@/lib/mdx';
+import { getUnifiedDocs, getDocById, getStaticPaths } from '@/lib/mdx';
 import { DocsManager } from '@/components/DocsManager';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { mdxComponents } from '@/lib/mdx-components';
 
 interface PageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: Promise<{ slug?: string[] }>;
 }
 
-export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-  const resolvedParams = await searchParams;
-  const sectionId = resolvedParams.section as string;
-  const itemId = resolvedParams.item as string;
-  const lang = (resolvedParams.lang as string) === 'ar' ? 'ar' : 'en';
+export async function generateStaticParams() {
+  return await getStaticPaths();
+}
+
+function parseSlug(slug?: string[]): { lang: 'en' | 'ar'; sectionId?: string; itemId?: string } {
+  if (!slug || slug.length === 0) return { lang: 'en', sectionId: undefined, itemId: undefined };
+  
+  let lang: 'en' | 'ar' = 'en';
+  let sectionId: string | undefined = undefined;
+  let itemId: string | undefined = undefined;
+
+  // First segment could be lang or sectionId (if lang is defaulted)
+  if (slug[0] === 'ar' || slug[0] === 'en') {
+    lang = slug[0] as 'en' | 'ar';
+    sectionId = slug[1];
+    itemId = slug[2];
+  } else {
+    // Default to 'en' if first segment isn't a known lang
+    sectionId = slug[0];
+    itemId = slug[1];
+  }
+
+  return { lang, sectionId, itemId };
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const { lang, sectionId, itemId } = parseSlug(slug);
   const isArabic = lang === 'ar';
   
   const docs = await getUnifiedDocs();
@@ -49,7 +72,6 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     ? section.translations.ar.content 
     : section.content;
 
-  // Enhance if item is present
   if (itemId && section.items) {
     const item = section.items.find(i => i.id === itemId);
     if (item) {
@@ -57,7 +79,6 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       const baseDesc = isArabic && item.translations?.ar ? item.translations.ar.description : item.description;
       const details = isArabic && item.translations?.ar ? item.translations.ar.details : item.details;
       
-      // Combine description with details for a richer SEO snippet
       description = baseDesc;
       if (details && details.length > 0) {
         description += ` - ${details.join(' ')}`;
@@ -65,10 +86,9 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     }
   }
 
-  // Sanitize: Remove Markdown syntax and limit length
   const finalDescription = description
-    .replace(/[#*`~_]/g, '') // Remove MD formatting
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Standardize MD links to plain text
+    .replace(/[#*`~_]/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .substring(0, 160)
     .trim();
 
@@ -85,19 +105,23 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   };
 }
 
-export default async function Home({ searchParams }: PageProps) {
-  const resolvedParams = await searchParams;
-  const sectionId = (resolvedParams.section as string) || 'overview';
-  const lang = (resolvedParams.lang as string) === 'ar' ? 'ar' : 'en';
+export default async function DocPage({ params }: PageProps) {
+  const { slug } = await params;
+  const { lang, sectionId, itemId } = parseSlug(slug);
 
   const [docs, activeSection] = await Promise.all([
     getUnifiedDocs(),
-    getDocById(sectionId, lang)
+    sectionId ? getDocById(sectionId, lang) : Promise.resolve(undefined)
   ]);
   
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Loading Coptogram Docs...</div>}>
-      <DocsManager docs={docs}>
+      <DocsManager 
+        docs={docs} 
+        initialLang={lang}
+        initialSectionId={sectionId}
+        initialItemId={itemId}
+      >
         {activeSection && (
           <MDXRemote 
             source={activeSection.content} 

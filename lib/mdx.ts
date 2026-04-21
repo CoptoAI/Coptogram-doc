@@ -46,6 +46,33 @@ export async function getAllDocs(lang: 'en' | 'ar' = 'en'): Promise<DocSection[]
   }
 }
 
+export async function getStaticPaths(): Promise<{ slug: string[] }[]> {
+  const languages: ('en' | 'ar')[] = ['en', 'ar'];
+  const paths: { slug: string[] }[] = [];
+
+  // Landing pages
+  paths.push({ slug: [] });
+  paths.push({ slug: ['ar'] });
+  paths.push({ slug: ['en'] });
+
+  for (const lang of languages) {
+    const sections = await getAllDocs(lang);
+    for (const section of sections) {
+      // Section pages: /[lang]/[sectionId]
+      paths.push({ slug: [lang, section.id] });
+      
+      if (section.items) {
+        for (const item of section.items) {
+          // Item pages: /[lang]/[sectionId]/[itemId]
+          paths.push({ slug: [lang, section.id, item.id] });
+        }
+      }
+    }
+  }
+
+  return paths;
+}
+
 export async function getDocById(id: string, lang: 'en' | 'ar' = 'en'): Promise<DocSection | undefined> {
   const docs = await getAllDocs(lang);
   return docs.find(doc => doc.id === id);
