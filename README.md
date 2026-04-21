@@ -77,34 +77,28 @@ The platform supports **English** and **Arabic** out of the box.
 
 ---
 
-## 🚢 Deployment to Hostinger (Shared Hosting)
+## 🚢 Deployment to Hostinger (Manual & GitHub)
 
-Hostinger supports Next.js through its Node.js selector. Follow these steps for a successful deployment:
+The project includes a **Root `server.js`** acting as the entry point for shared hosting.
 
-### 1. Build the Project
-Run the following command to generate the standalone production build:
-```bash
-npm run build
-```
+### Method A: Direct GitHub Deployment (Recommended)
+1. Connect your repo in Hostinger hPanel.
+2. Set **Application Startup File** to `server.js`.
+3. Set **Node.js Version** to 20.x or higher.
+4. Add `NEXT_TELEMETRY_DISABLED=1` to Environment Variables.
 
-### 2. Prepare Upload Files
-Copy the contents of the generated `.next/standalone` folder to your computer. Then:
-- Copy the `public` folder into the root.
-- Copy `.next/static` into `.next/standalone/.next/static`.
-- **CRITICAL**: Copy the `content` folder from your project root into your deployment root. The app needs this folder to render your documentation articles.
+### Method B: Manual Upload
+1. Run `npm run build` locally.
+2. Prepare files from `.next/standalone`.
+3. **CRITICAL**: Copy the `content`, `public`, and `.next/static` folders into the root.
+4. Upload all files (including `server.js`) to `public_html`.
 
-### 3. Upload to Hostinger
-- Log in to **Hostinger hPanel**.
-- Go to **File Manager** and upload all files (including `server.js`) to your application root (e.g., `public_html`).
-
-### 4. Configure Node.js
-- Search for **Node.js** in hPanel.
-- Select **Node.js Version 20** or higher.
-- Set **Application Startup File** to `server.js`.
-- Add your environment variables (like `NEXT_PUBLIC_GA_ID`) in the hPanel Node.js settings.
-
-### 5. Authorized Domains (Firebase)
-If using Google Login, add your production domain in the **Firebase Console** under **Authentication > Settings > Authorized Domains**.
+### 🛡️ Fixing 503 Service Unavailable / EEXIST Error
+If the server crashes:
+1. Go to **Hostinger hPanel > Node.js**.
+2. Click **Stop** on your app.
+3. Wait 10 seconds, then click **Start**. 
+*This clears "zombie" processes that lock the server ports.*
 
 ---
 
