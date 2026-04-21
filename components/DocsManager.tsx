@@ -1,17 +1,28 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { DocSection } from '@/lib/docs-data';
 import { Navbar } from '@/components/Navbar';
-import { Sidebar } from '@/components/Sidebar';
 import { DocContent } from '@/components/DocContent';
-import { TableOfContents } from '@/components/TableOfContents';
-import { LandingView } from '@/components/LandingView';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import { Search, X, ArrowRight, Sparkles } from 'lucide-react';
 import Fuse from 'fuse.js';
 import { cn } from '@/lib/utils';
+
+// Dynamic imports for large components
+const Sidebar = dynamic(() => import('@/components/Sidebar').then(mod => mod.Sidebar), {
+  loading: () => <div className="hidden lg:block w-[240px] animate-pulse bg-muted/20 h-screen" />
+});
+
+const TableOfContents = dynamic(() => import('@/components/TableOfContents').then(mod => mod.TableOfContents), {
+  loading: () => <div className="hidden lg:block w-[200px] animate-pulse bg-muted/20 h-[400px]" />
+});
+
+const LandingView = dynamic(() => import('@/components/LandingView').then(mod => mod.LandingView), {
+  loading: () => <div className="flex-1 animate-pulse bg-muted/10 h-screen" />
+});
 
 interface DocsManagerProps {
   docs: DocSection[];
@@ -33,6 +44,8 @@ export function DocsManager({
   const [activeSectionId, setActiveSectionId] = React.useState<string | null>(initialSectionId ?? null);
   const [activeItemId, setActiveItemId] = React.useState<string | null>(initialItemId ?? null);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [deferredSearchQuery, setDeferredSearchQuery] = React.useState('');
+  const [isPending, startTransition] = React.useTransition();
   const [themeColor, setThemeColor] = React.useState('default');
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [language, setLanguage] = React.useState<'en' | 'ar'>(initialLang);
@@ -199,9 +212,9 @@ export function DocsManager({
 
   // Search results calculation using Fuse.js
   const searchResults = React.useMemo(() => {
-    if (!searchQuery.trim()) return [];
+    if (!deferredSearchQuery.trim()) return [];
 
-    return fuse.search(searchQuery)
+    return fuse.search(deferredSearchQuery)
       .map(result => {
         const isAr = language === 'ar';
         const titleKey = isAr ? 'titleAr' : 'title';
@@ -222,7 +235,7 @@ export function DocsManager({
         };
       })
       .slice(0, 10);
-  }, [searchQuery, fuse, language]);
+  }, [deferredSearchQuery, fuse, language]);
 
   const handleResultClick = React.useCallback((sectionId: string, itemId?: string) => {
     setActiveSectionId(sectionId);
@@ -319,6 +332,13 @@ export function DocsManager({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeSectionId, activeItemId, docsData, handleResultClick, navigateToSection]);
 
+  const handleSearch = React.useCallback((query: string) => {
+    setSearchQuery(query);
+    startTransition(() => {
+      setDeferredSearchQuery(query);
+    });
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col bg-background" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <a 
@@ -329,7 +349,7 @@ export function DocsManager({
       </a>
       <Navbar 
         searchQuery={searchQuery}
-        onSearch={setSearchQuery} 
+        onSearch={handleSearch} 
         onThemeColorChange={handleThemeColorChange} 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onHomeClick={() => navigateToSection(null)}
@@ -341,7 +361,7 @@ export function DocsManager({
         <main id="main-content" className="flex-1" tabIndex={-1}>
           <LandingView 
             onSectionSelect={navigateToSection} 
-            onSearch={setSearchQuery} 
+            onSearch={handleSearch} 
             docs={localizedDocs}
             language={language}
             siteConfig={siteConfig}

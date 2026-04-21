@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { DocSection } from '@/lib/docs-data';
-import { CodeBlock } from './CodeBlock';
 import { Breadcrumbs } from './Breadcrumbs';
 import { Feedback } from './Feedback';
 import { DocTOC } from './DocTOC';
@@ -31,6 +31,11 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { sanitizeSchema } from '@/lib/markdown-config';
 
+// Dynamic heavy components
+const CodeBlock = dynamic(() => import('./CodeBlock').then(mod => mod.CodeBlock), {
+  loading: () => <div className="h-24 w-full bg-muted/20 animate-pulse rounded-md my-6" />
+});
+
 interface DocContentProps {
   section: DocSection | null | undefined;
   onNavigate: (id: string) => void;
@@ -40,6 +45,219 @@ interface DocContentProps {
   activeItemId?: string | null;
   children?: React.ReactNode;
 }
+
+const CustomIframe = React.memo(({ src, title, language, ...props }: any) => {
+  const [iframeError, setIframeError] = React.useState(false);
+  const isYouTube = src?.includes('youtube.com') || src?.includes('youtu.be');
+  
+  const getYouTubeEmbedUrl = (url: string) => {
+    if (!url) return url;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      return `https://www.youtube.com/embed/${match[2]}?autoplay=0&rel=0`;
+    }
+    return url;
+  };
+
+  let finalSrc = src;
+  try {
+    finalSrc = isYouTube ? getYouTubeEmbedUrl(src) : src;
+  } catch (e) {
+    console.error("Failed to parse YouTube URL:", e);
+  }
+  
+  if (!src || iframeError) {
+    return (
+      <div className="flex flex-col items-center justify-center aspect-video w-full my-8 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
+        <AlertTriangle className="h-10 w-10 mb-2 opacity-50" />
+        <p className="text-sm font-medium">
+          {!src ? (language === 'ar' ? 'مصدر المحتوى مفقود' : 'Content source missing') : (language === 'ar' ? 'فشل تحميل المحتوى الخارجي' : 'External content failed to load')}
+        </p>
+        {src && (
+          <a href={src} target="_blank" rel="noopener noreferrer" className="mt-4 text-[12px] text-primary hover:underline">
+             {language === 'ar' ? 'افتح في نافذة جديدة' : 'Open in a new window'}
+          </a>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative aspect-video w-full my-8 overflow-hidden rounded-xl border border-border bg-muted/20 shadow-sm">
+      <iframe
+        src={finalSrc}
+        title={title || "Video Player"}
+        className="absolute inset-0 h-full w-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+        onError={() => setIframeError(true)}
+        {...props}
+      />
+    </div>
+  );
+});
+CustomIframe.displayName = 'CustomIframe';
+
+const CustomVideo = React.memo(({ src, language, ...props }: any) => {
+  const [videoError, setVideoError] = React.useState(false);
+
+  if (!src || videoError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 my-8 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
+         <AlertTriangle className="h-10 w-10 mb-2 opacity-50" />
+         <p className="text-sm font-medium">
+           {!src ? (language === 'ar' ? 'مصدر الفيديو مفقود' : 'Video source missing') : (language === 'ar' ? 'فشل تشغيل الفيديو' : 'Video playback failed')}
+         </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="my-8 overflow-hidden rounded-xl border border-border bg-black shadow-lg">
+      <video 
+        src={src} 
+        controls 
+        className="w-full"
+        playsInline
+        onError={() => setVideoError(true)}
+        {...props}
+      >
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  );
+});
+CustomVideo.displayName = 'CustomVideo';
+
+const InteractiveSteps = React.memo(({ children, language }: any) => {
+  const [activeStep, setActiveStep] = React.useState(1);
+  const containerRef = React.useRef<HTMLOListElement>(null);
+  const totalSteps = React.Children.toArray(children).filter(child => React.isValidElement(child)).length;
+
+  const progressPercentage = totalSteps > 1 ? ((activeStep - 1) / (totalSteps - 1)) * 100 : 100;
+
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const stepIndex = parseInt(entry.target.getAttribute('data-step') || '1');
+            setActiveStep(stepIndex);
+          }
+        });
+      },
+      { 
+        threshold: 0.5, 
+        rootMargin: '-10% 0px -40% 0px' 
+      }
+    );
+
+    const steps = containerRef.current?.querySelectorAll('li[data-step]');
+    steps?.forEach((step) => observer.observe(step));
+
+    return () => observer.disconnect();
+  }, [children]);
+
+  return (
+    <div className="relative group/steps-container my-16">
+      {/* Floating Step Indicator */}
+      <div className="sticky top-20 z-40 flex justify-end pointer-events-none mb-[-48px] px-4">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ 
+            opacity: totalSteps > 0 ? 1 : 0, 
+            y: 0 
+          }}
+          className="bg-card/90 backdrop-blur-xl border border-border/50 text-foreground px-4 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-2 min-w-[140px]"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-70">
+                {language === 'ar' ? 'التقدم' : 'Progress'}
+              </span>
+            </div>
+            <span className="text-[11px] font-bold font-mono">
+              {activeStep}/{totalSteps}
+            </span>
+          </div>
+          
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+            <motion.div 
+              animate={{ width: `${(activeStep / totalSteps) * 100}%` }}
+              className="h-full bg-primary"
+              transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            />
+          </div>
+        </motion.div>
+      </div>
+
+      <ol ref={containerRef} className="relative space-y-12">
+        <div className="absolute left-[19px] inset-y-0 w-1 bg-muted rounded-full overflow-hidden">
+          <motion.div 
+            animate={{ height: `${progressPercentage}%` }}
+            className="absolute top-0 left-0 w-full bg-gradient-to-b from-primary via-primary to-primary/30 shadow-[0_0_10px_rgba(var(--primary),0.3)]"
+            transition={{ type: "spring", stiffness: 50, damping: 15 }}
+          />
+        </div>
+
+        {React.Children.map(children, (child: any, idx) => {
+          if (!React.isValidElement(child)) return null;
+          const content = (child.props as any)?.children;
+          const stepNum = idx + 1;
+
+          return (
+            <motion.li 
+              key={idx} 
+              data-step={stepNum}
+              initial={{ opacity: 0, x: -10 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: idx * 0.05 }}
+              className={cn(
+                "relative pl-12 group/step transition-all duration-700",
+                activeStep === stepNum ? "opacity-100 scale-100" : "opacity-30 scale-[0.98] blur-[0.5px]"
+              )}
+            >
+              <div className={cn(
+                  "absolute left-0 top-0 h-10 w-10 rounded-full flex items-center justify-center font-black shadow-lg z-10 transition-all duration-500",
+                  activeStep === stepNum 
+                    ? "bg-primary text-primary-foreground scale-110 shadow-primary/40 ring-4 ring-primary/10" 
+                    : (activeStep > stepNum ? "bg-primary/20 text-primary scale-95" : "bg-muted text-muted-foreground scale-100")
+                )}
+              >
+                {activeStep > stepNum ? <CheckCircle2 className="h-5 w-5" /> : stepNum}
+              </div>
+              <div className={cn(
+                 "space-y-2 p-6 rounded-2xl border transition-all duration-500",
+                 activeStep === stepNum ? "bg-card border-border shadow-sm" : "border-transparent"
+              )}>
+                <h3 className={cn(
+                  "font-bold text-lg transition-colors duration-500 flex items-center gap-3",
+                  activeStep === stepNum ? "text-primary" : "text-foreground"
+                )}>
+                  {language === 'ar' ? `الخطوة ${stepNum}` : `Step ${stepNum}`}
+                  {activeStep === stepNum && (
+                    <motion.span 
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-tighter"
+                    >
+                      {language === 'ar' ? 'نشط' : 'Active'}
+                    </motion.span>
+                  )}
+                </h3>
+                <div className="text-muted-foreground leading-relaxed">{content}</div>
+              </div>
+            </motion.li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+});
+InteractiveSteps.displayName = 'InteractiveSteps';
 
 export function DocContent({ 
   section, 
@@ -115,7 +333,213 @@ export function DocContent({
     };
   }, [allDocs, section]);
 
-  // 2. EARLY RETURN AFTER HOOKS
+  const linkify = React.useCallback((text: string) => {
+    if (!text) return text;
+    
+    // Sort keywords by length descending to match longest phrases first
+    const keywords = Object.keys(keywordMap).sort((a, b) => b.length - a.length);
+    if (keywords.length === 0) return text;
+
+    let result = text;
+    const placeholderMap: Record<string, string> = {};
+    let counter = 0;
+
+    // Use a regex to find keywords, avoiding matching inside existing markdown links or codes
+    keywords.forEach(keyword => {
+      // Escape keyword for regex
+      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Look for the keyword as a whole word, case insensitive
+      const regex = new RegExp(`(?<![\\[\\(])\\b${escapedKeyword}\\b(?![\\]\\)])`, 'gi');
+      
+      result = result.replace(regex, (match) => {
+        const id = `__LINK_${counter}__`;
+        const linkData = keywordMap[keyword.toLowerCase()];
+        const url = linkData.itemId 
+          ? `docs://${linkData.sectionId}/${linkData.itemId}` 
+          : `docs://${linkData.sectionId}`;
+        
+        placeholderMap[id] = `[${match}](${url})`;
+        counter++;
+        return id;
+      });
+    });
+
+    // Replace placeholders back
+    Object.keys(placeholderMap).forEach(id => {
+      result = result.replace(id, placeholderMap[id]);
+    });
+
+    return result;
+  }, [keywordMap]);
+
+  const MarkdownComponents = React.useMemo(() => ({
+    a: ({ href, children, className, node, ...props }: any) => {
+      if (href?.startsWith('docs://')) {
+        const path = href.replace('docs://', '').split('/');
+        const sectionId = path[0];
+        const itemId = path[1];
+        
+        if (className?.includes('button')) {
+          const isOutlined = className.includes('ln');
+          return (
+            <button
+              onClick={() => onLinkClick?.(sectionId, itemId)}
+              className={cn(
+                "inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all active:scale-95 my-4 cursor-pointer",
+                isOutlined ? "border-2 border-primary text-primary hover:bg-primary/5" : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:opacity-90"
+              )}
+            >
+              {children}
+            </button>
+          );
+        }
+
+        return (
+          <button
+            onClick={() => onLinkClick?.(sectionId, itemId)}
+            className="text-primary hover:underline font-medium cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm px-0.5 transition-all active:opacity-70 inline-flex items-center gap-1"
+          >
+            {children}
+          </button>
+        );
+      }
+
+      if (className?.includes('button')) {
+        const isOutlined = className.includes('ln');
+        const isDemo = className.includes('demo') || href?.includes('watch') || href?.includes('demo');
+        const isDownload = className.includes('dl') || href?.includes('download');
+
+        return (
+          <a
+            href={href}
+            target="_blank"
+            rel="nofollow noreferrer noopener"
+            className={cn(
+              "inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all active:scale-95 my-4",
+              isOutlined ? "border-2 border-primary text-primary hover:bg-primary/5" : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:opacity-90"
+            )}
+            {...props}
+          >
+             {children}
+             {isDownload && <Download className="h-4 w-4" />}
+             {isDemo && <PlayCircle className="h-4 w-4" />}
+          </a>
+        );
+      }
+
+      const isExternal = !href?.startsWith('#') && !href?.startsWith('/');
+      return (
+        <a 
+          href={href} 
+          {...props} 
+          target={isExternal ? "_blank" : undefined} 
+          rel={isExternal ? "nofollow noreferrer noopener" : undefined}
+          className={cn(
+            "text-primary hover:opacity-80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm px-0.5 inline-flex items-center gap-1 active:scale-[0.98]",
+            className?.includes('extL') && "font-semibold border-b border-primary/30"
+          )}
+        >
+          {children}
+          {isExternal && <ExternalLink className="h-3 w-3 opacity-60" />}
+        </a>
+      );
+    },
+    blockquote: ({ children, className }: any) => {
+      const isS1 = className?.includes('s1');
+      const isS2 = className?.includes('s2');
+      return (
+        <blockquote className={cn(
+          "relative my-10 p-8 rounded-2xl border-l-4 border-primary bg-muted/30 italic text-lg leading-relaxed text-foreground/90",
+          isS1 && "bg-primary/5 border-l-8 border-primary/40 rounded-e-3xl",
+          isS2 && "border-l-0 border-t-4 border-primary bg-background shadow-xl scale-105 my-14"
+        )}>
+          <div className="relative z-10">{children}</div>
+          <span className="absolute -top-4 -left-2 text-6xl text-primary/10 select-none font-serif">&ldquo;</span>
+        </blockquote>
+      );
+    },
+    p: ({ children, className }: any) => {
+      if (className?.includes('note')) {
+        const isWarning = className.includes('wr');
+        return (
+          <div className={cn(
+            "my-8 p-5 rounded-xl border-l-4 flex items-start gap-4",
+            isWarning ? "bg-amber-500/5 border-amber-500 text-amber-900 dark:text-amber-200" : "bg-blue-500/5 border-blue-500 text-blue-900 dark:text-blue-200"
+          )}>
+            <div className="shrink-0 mt-1">
+              {isWarning ? <AlertTriangle className="h-5 w-5" /> : <Info className="h-5 w-5" />}
+            </div>
+            <div className="text-sm leading-relaxed">{children}</div>
+          </div>
+        );
+      }
+      return <p className={cn("leading-7 mb-4 last:mb-0 text-start", className)}>{children}</p>;
+    },
+    div: ({ children, className }: any) => {
+      if (className?.includes('alert')) {
+        const type = className.includes('success') ? 'success' : className.includes('warning') ? 'warning' : className.includes('error') ? 'error' : className.includes('info') ? 'info' : 'default';
+        const titleMap = {
+          success: language === 'ar' ? 'نجاح!' : 'Success!',
+          warning: language === 'ar' ? 'تحذير!' : 'Warning!',
+          error: language === 'ar' ? 'خطأ!' : 'Error!',
+          info: language === 'ar' ? 'معلومة!' : 'Info!',
+          default: language === 'ar' ? 'ملاحظة:' : 'Note:'
+        };
+        return (
+          <div className={cn(
+            "my-8 p-0 rounded-xl border border-border/50 overflow-hidden shadow-sm bg-card/50",
+            type === 'success' && "bg-green-500/5 border-green-500/20",
+            type === 'warning' && "bg-amber-500/5 border-amber-500/20",
+            type === 'error' && "bg-red-500/5 border-red-500/20",
+            type === 'info' && "bg-blue-500/5 border-blue-500/20"
+          )}>
+            <div className="px-5 py-3 flex items-center gap-3 border-b border-border/10 font-bold text-sm">
+               {type === 'success' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+               {type === 'warning' && <AlertTriangle className="h-4 w-4 text-amber-600" />}
+               {type === 'error' && <XCircle className="h-4 w-4 text-red-600" />}
+               {type === 'info' && <Info className="h-4 w-4 text-blue-600" />}
+               {titleMap[type]}
+            </div>
+            <div className="px-5 py-4 text-sm leading-relaxed text-muted-foreground">{children}</div>
+          </div>
+        );
+      }
+      if (className?.includes('dlBox')) {
+        return (
+          <div className="my-10 p-6 rounded-2xl bg-card border border-border shadow-md flex items-center gap-5 group hover:border-primary/40 transition-all">
+            <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-110">
+              <Download className="h-7 w-7" />
+            </div>
+            <div className="font-bold text-base">{children}</div>
+          </div>
+        );
+      }
+      return <div className={className}>{children}</div>;
+    },
+    table: ({ children, className }: any) => (
+      <div className={cn("my-10 w-full overflow-x-auto rounded-2xl border border-border shadow-xl", className?.includes('sticky') && "max-h-[600px] overflow-y-auto")}>
+        <table className="w-full text-sm text-left border-collapse">{children}</table>
+      </div>
+    ),
+    thead: ({ children }: any) => <thead className="bg-muted/80 backdrop-blur-sm border-b border-border sticky top-0 z-10">{children}</thead>,
+    th: ({ children }: any) => <th className="px-6 py-4 font-black uppercase tracking-wider">{children}</th>,
+    td: ({ children }: any) => <td className="px-6 py-4 border-b border-border/50">{children}</td>,
+    ol: ({ children, className }: any) => {
+      if (className?.includes('steps')) return <InteractiveSteps language={language}>{children}</InteractiveSteps>;
+      return <ol className="list-decimal pl-6 my-6 space-y-3">{children}</ol>;
+    },
+    iframe: (props: any) => <CustomIframe {...props} language={language} />,
+    video: (props: any) => <CustomVideo {...props} language={language} />,
+    img: ({ src, alt }: any) => src ? (
+      <div className="my-8 space-y-3">
+        <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted/20 shadow-lg group">
+          <Image src={src} alt={alt || ""} fill className="object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
+        </div>
+        {alt && <p className="text-center text-[12px] text-muted-foreground italic font-medium">{alt}</p>}
+      </div>
+    ) : null
+  }), [language, onLinkClick]);
+
   if (!section || hasError) {
     return (
       <motion.div
@@ -145,533 +569,7 @@ export function DocContent({
     );
   }
 
-  // Helper to inject links into text
-  const linkify = (text: string) => {
-    if (!text) return text;
-    
-    // Sort keywords by length descending to match longest phrases first
-    const keywords = Object.keys(keywordMap).sort((a, b) => b.length - a.length);
-    if (keywords.length === 0) return text;
 
-    let result = text;
-    const placeholderMap: Record<string, string> = {};
-    let counter = 0;
-
-    // Use a regex to find keywords, avoiding matching inside existing markdown links or codes
-    keywords.forEach(keyword => {
-      // Escape keyword for regex
-      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // Look for the keyword as a whole word, case insensitive
-      // Not preceded by [ or ( (basic check to avoid breaking links)
-      const regex = new RegExp(`(?<![\\[\\(])\\b${escapedKeyword}\\b(?![\\]\\)])`, 'gi');
-      
-      result = result.replace(regex, (match) => {
-        const id = `__LINK_${counter}__`;
-        const linkData = keywordMap[keyword.toLowerCase()];
-        const url = linkData.itemId 
-          ? `docs://${linkData.sectionId}/${linkData.itemId}` 
-          : `docs://${linkData.sectionId}`;
-        
-        placeholderMap[id] = `[${match}](${url})`;
-        counter++;
-        return id;
-      });
-    });
-
-    // Replace placeholders back
-    Object.keys(placeholderMap).forEach(id => {
-      result = result.replace(id, placeholderMap[id]);
-    });
-
-    return result;
-  };
-
-  const getYouTubeEmbedUrl = (url: string) => {
-    if (!url) return url;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    if (match && match[2].length === 11) {
-      return `https://www.youtube.com/embed/${match[2]}?autoplay=0&rel=0`;
-    }
-    return url;
-  };
-
-  const CustomIframe = ({ src, title, node, ...props }: any) => {
-    const [iframeError, setIframeError] = React.useState(false);
-    const isYouTube = src?.includes('youtube.com') || src?.includes('youtu.be');
-    
-    let finalSrc = src;
-    try {
-      finalSrc = isYouTube ? getYouTubeEmbedUrl(src) : src;
-    } catch (e) {
-      console.error("Failed to parse YouTube URL:", e);
-    }
-    
-    if (!src || iframeError) {
-      return (
-        <div className="flex flex-col items-center justify-center aspect-video w-full my-8 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
-          <AlertTriangle className="h-10 w-10 mb-2 opacity-50" />
-          <p className="text-sm font-medium">
-            {!src ? (language === 'ar' ? 'مصدر المحتوى مفقود' : 'Content source missing') : (language === 'ar' ? 'فشل تحميل المحتوى الخارجي' : 'External content failed to load')}
-          </p>
-          {src && (
-            <a href={src} target="_blank" rel="noopener noreferrer" className="mt-4 text-[12px] text-primary hover:underline">
-               {language === 'ar' ? 'افتح في نافذة جديدة' : 'Open in a new window'}
-            </a>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <div className="relative aspect-video w-full my-8 overflow-hidden rounded-xl border border-border bg-muted/20 shadow-sm">
-        <iframe
-          src={finalSrc}
-          title={title || "Video Player"}
-          className="absolute inset-0 h-full w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-          onError={() => setIframeError(true)}
-          {...props}
-        />
-      </div>
-    );
-  };
-
-  const CustomVideo = ({ src, node, ...props }: any) => {
-    const [videoError, setVideoError] = React.useState(false);
-
-    if (!src || videoError) {
-      return (
-        <div className="flex flex-col items-center justify-center py-10 my-8 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
-           <AlertTriangle className="h-10 w-10 mb-2 opacity-50" />
-           <p className="text-sm font-medium">
-             {!src ? (language === 'ar' ? 'مصدر الفيديو مفقود' : 'Video source missing') : (language === 'ar' ? 'فشل تشغيل الفيديو' : 'Video playback failed')}
-           </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="my-8 overflow-hidden rounded-xl border border-border bg-black shadow-lg">
-        <video 
-          src={src} 
-          controls 
-          className="w-full"
-          playsInline
-          onError={() => setVideoError(true)}
-          {...props}
-        >
-          Your browser does not support the video tag.
-        </video>
-      </div>
-    );
-  };
-
-  const InteractiveSteps = ({ children, language }: any) => {
-    const [activeStep, setActiveStep] = React.useState(1);
-    const containerRef = React.useRef<HTMLOListElement>(null);
-    const totalSteps = React.Children.toArray(children).filter(child => React.isValidElement(child)).length;
-
-    const progressPercentage = totalSteps > 1 ? ((activeStep - 1) / (totalSteps - 1)) * 100 : 100;
-
-    React.useEffect(() => {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const stepIndex = parseInt(entry.target.getAttribute('data-step') || '1');
-              setActiveStep(stepIndex);
-            }
-          });
-        },
-        { 
-          threshold: 0.5, 
-          rootMargin: '-10% 0px -40% 0px' 
-        }
-      );
-
-      const steps = containerRef.current?.querySelectorAll('li[data-step]');
-      steps?.forEach((step) => observer.observe(step));
-
-      return () => observer.disconnect();
-    }, [children]);
-
-    return (
-      <div className="relative group/steps-container my-16">
-        {/* Floating Step Indicator */}
-        <div className="sticky top-20 z-40 flex justify-end pointer-events-none mb-[-48px] px-4">
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ 
-              opacity: totalSteps > 0 ? 1 : 0, 
-              y: 0 
-            }}
-            className="bg-card/90 backdrop-blur-xl border border-border/50 text-foreground px-4 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-2 min-w-[140px]"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-70">
-                  {language === 'ar' ? 'التقدم' : 'Progress'}
-                </span>
-              </div>
-              <span className="text-[11px] font-bold font-mono">
-                {activeStep}/{totalSteps}
-              </span>
-            </div>
-            
-            {/* Progress Bar in Pill */}
-            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-              <motion.div 
-                animate={{ width: `${(activeStep / totalSteps) * 100}%` }}
-                className="h-full bg-primary"
-                transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              />
-            </div>
-          </motion.div>
-        </div>
-
-        <ol 
-          ref={containerRef}
-          className="relative space-y-12"
-        >
-          {/* Vertical Progress Line Background */}
-          <div className="absolute left-[19px] inset-y-0 w-1 bg-muted rounded-full overflow-hidden">
-            {/* Dynamic Progress Fill */}
-            <motion.div 
-              animate={{ height: `${progressPercentage}%` }}
-              className="absolute top-0 left-0 w-full bg-gradient-to-b from-primary via-primary to-primary/30 shadow-[0_0_10px_rgba(var(--primary),0.3)]"
-              transition={{ type: "spring", stiffness: 50, damping: 15 }}
-            />
-          </div>
-
-          {React.Children.map(children, (child: any, idx) => {
-            if (!React.isValidElement(child)) return null;
-            const content = (child.props as any)?.children;
-            const stepNum = idx + 1;
-
-            return (
-              <motion.li 
-                key={idx} 
-                data-step={stepNum}
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: idx * 0.05 }}
-                className={cn(
-                  "relative pl-12 group/step transition-all duration-700",
-                  activeStep === stepNum ? "opacity-100 scale-100" : "opacity-30 scale-[0.98] blur-[0.5px]"
-                )}
-              >
-                <div 
-                  className={cn(
-                    "absolute left-0 top-0 h-10 w-10 rounded-full flex items-center justify-center font-black shadow-lg z-10 transition-all duration-500",
-                    activeStep === stepNum 
-                      ? "bg-primary text-primary-foreground scale-110 shadow-primary/40 ring-4 ring-primary/10" 
-                      : (activeStep > stepNum ? "bg-primary/20 text-primary scale-95" : "bg-muted text-muted-foreground scale-100")
-                  )}
-                >
-                  {activeStep > stepNum ? <CheckCircle2 className="h-5 w-5" /> : stepNum}
-                </div>
-                <div className={cn(
-                   "space-y-2 p-6 rounded-2xl border transition-all duration-500",
-                   activeStep === stepNum ? "bg-card border-border shadow-sm" : "border-transparent"
-                )}>
-                  <h3 className={cn(
-                    "font-bold text-lg transition-colors duration-500 flex items-center gap-3",
-                    activeStep === stepNum ? "text-primary" : "text-foreground"
-                  )}>
-                    {language === 'ar' ? `الخطوة ${stepNum}` : `Step ${stepNum}`}
-                    {activeStep === stepNum && (
-                      <motion.span 
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-tighter"
-                      >
-                        {language === 'ar' ? 'نشط' : 'Active'}
-                      </motion.span>
-                    )}
-                  </h3>
-                  <div className="text-muted-foreground leading-relaxed">
-                    {content}
-                  </div>
-                </div>
-              </motion.li>
-            );
-          })}
-        </ol>
-      </div>
-    );
-  };
-
-  const MarkdownComponents = {
-    a: ({ href, children, className, node, ...props }: any) => {
-      // 1. Internal Platform Links (docs://)
-      if (href?.startsWith('docs://')) {
-        const path = href.replace('docs://', '').split('/');
-        const sectionId = path[0];
-        const itemId = path[1];
-        
-        // If it's styled as a button, use button styles
-        if (className?.includes('button')) {
-          const isOutlined = className.includes('ln');
-          return (
-            <button
-              onClick={() => onLinkClick?.(sectionId, itemId)}
-              className={cn(
-                "inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all active:scale-95 my-4 cursor-pointer",
-                isOutlined 
-                  ? "border-2 border-primary text-primary hover:bg-primary/5" 
-                  : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:opacity-90"
-              )}
-            >
-              {children}
-            </button>
-          );
-        }
-
-        return (
-          <button
-            onClick={() => onLinkClick?.(sectionId, itemId)}
-            className="text-primary hover:underline font-medium cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm px-0.5 transition-all active:opacity-70 inline-flex items-center gap-1"
-            aria-label={`Navigate to ${children}`}
-          >
-            {children}
-          </button>
-        );
-      }
-
-      // 2. Custom Button Styles (from user XML guide)
-      if (className?.includes('button')) {
-        const isOutlined = className.includes('ln');
-        const isDemo = className.includes('demo') || href?.includes('watch') || href?.includes('demo');
-        const isDownload = className.includes('dl') || href?.includes('download');
-
-        return (
-          <a
-            href={href}
-            target="_blank"
-            rel="nofollow noreferrer noopener"
-            className={cn(
-              "inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all active:scale-95 my-4",
-              isOutlined 
-                ? "border-2 border-primary text-primary hover:bg-primary/5" 
-                : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:opacity-90"
-            )}
-            {...props}
-          >
-             {children}
-             {isDownload && <Download className="h-4 w-4" />}
-             {isDemo && <PlayCircle className="h-4 w-4" />}
-          </a>
-        );
-      }
-
-      // 3. External Links (extL)
-      const isExternal = !href?.startsWith('#') && !href?.startsWith('/');
-      return (
-        <a 
-          href={href} 
-          {...props} 
-          target={isExternal ? "_blank" : undefined} 
-          rel={isExternal ? "nofollow noreferrer noopener" : undefined}
-          className={cn(
-            "text-primary hover:opacity-80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm px-0.5 inline-flex items-center gap-1 active:scale-[0.98]",
-            className?.includes('extL') && "font-semibold border-b border-primary/30"
-          )}
-        >
-          {children}
-          {isExternal && <ExternalLink className="h-3 w-3 opacity-60" aria-hidden="true" />}
-        </a>
-      );
-    },
-    blockquote: ({ children, className, node, ...props }: any) => {
-      const isS1 = className?.includes('s1');
-      const isS2 = className?.includes('s2');
-      
-      return (
-        <blockquote className={cn(
-          "relative my-10 p-8 rounded-2xl border-l-4 border-primary bg-muted/30 italic text-lg leading-relaxed text-foreground/90",
-          isS1 && "bg-primary/5 border-l-8 border-primary/40 rounded-e-3xl",
-          isS2 && "border-l-0 border-t-4 border-primary bg-background shadow-xl scale-105 my-14"
-        )} {...props}>
-          <div className="relative z-10">{children}</div>
-          <span className="absolute -top-4 -left-2 text-6xl text-primary/10 select-none font-serif">&ldquo;</span>
-        </blockquote>
-      );
-    },
-    p: ({ children, className, node, ...props }: any) => {
-      if (className?.includes('note')) {
-        const isWarning = className.includes('wr');
-        return (
-          <div className={cn(
-            "my-8 p-5 rounded-xl border-l-4 flex items-start gap-4",
-            isWarning 
-              ? "bg-amber-500/5 border-amber-500 text-amber-900 dark:text-amber-200" 
-              : "bg-blue-500/5 border-blue-500 text-blue-900 dark:text-blue-200"
-          )} {...props}>
-            <div className="shrink-0 mt-1">
-              {isWarning ? <AlertTriangle className="h-5 w-5" /> : <Info className="h-5 w-5" />}
-            </div>
-            <div className="text-sm leading-relaxed">{children}</div>
-          </div>
-        );
-      }
-      return <div className={cn("leading-7 mb-4 last:mb-0", className)} {...props}>{children}</div>;
-    },
-    div: ({ children, className, node, ...props }: any) => {
-      // Alert Component Handling
-      if (className?.includes('alert')) {
-        const isSuccess = className.includes('success');
-        const isWarning = className.includes('warning');
-        const isError = className.includes('error');
-        const isInfo = className.includes('info');
-
-        const type = isSuccess ? 'success' : isWarning ? 'warning' : isError ? 'error' : isInfo ? 'info' : 'default';
-        
-        const titleMap = {
-          success: language === 'ar' ? 'نجاح!' : 'Success!',
-          warning: language === 'ar' ? 'تحذير!' : 'Warning!',
-          error: language === 'ar' ? 'خطأ!' : 'Error!',
-          info: language === 'ar' ? 'معلومة!' : 'Info!',
-          default: language === 'ar' ? 'ملاحظة:' : 'Note:'
-        };
-
-        return (
-          <div className={cn(
-            "my-8 p-0 rounded-xl border border-border/50 overflow-hidden shadow-sm transition-all hover:shadow-md bg-card/50",
-            type === 'success' && "bg-green-500/5 border-green-500/20",
-            type === 'warning' && "bg-amber-500/5 border-amber-500/20",
-            type === 'error' && "bg-red-500/5 border-red-500/20",
-            type === 'info' && "bg-blue-500/5 border-blue-500/20"
-          )} {...props}>
-            <div className="px-5 py-3 flex items-center gap-3 border-b border-border/10">
-              <div className={cn(
-                "p-1.5 rounded-lg shrink-0",
-                type === 'success' && "bg-green-500/10 text-green-600",
-                type === 'warning' && "bg-amber-500/10 text-amber-600",
-                type === 'error' && "bg-red-500/10 text-red-600",
-                type === 'info' && "bg-blue-500/10 text-blue-600",
-                type === 'default' && "bg-muted text-muted-foreground"
-              )}>
-                {type === 'success' && <CheckCircle2 className="h-4 w-4" />}
-                {type === 'warning' && <AlertTriangle className="h-4 w-4" />}
-                {type === 'error' && <XCircle className="h-4 w-4" />}
-                {type === 'info' && <Info className="h-4 w-4" />}
-                {type === 'default' && <List className="h-4 w-4" />}
-              </div>
-              <span className={cn(
-                "font-bold text-sm tracking-tight capitalize",
-                type === 'success' && "text-green-700 dark:text-green-400",
-                type === 'warning' && "text-amber-700 dark:text-amber-400",
-                type === 'error' && "text-red-700 dark:text-red-400",
-                type === 'info' && "text-blue-700 dark:text-blue-400"
-              )}>
-                {titleMap[type]}
-              </span>
-            </div>
-            
-            <div className="px-5 py-4 flex gap-4">
-              <div className={cn(
-                "w-0.5 rounded-full shrink-0",
-                type === 'success' && "bg-green-500/30",
-                type === 'warning' && "bg-amber-500/30",
-                type === 'error' && "bg-red-500/30",
-                type === 'info' && "bg-blue-500/30",
-                type === 'default' && "bg-muted"
-              )} />
-              <div className={cn(
-                "text-sm leading-relaxed",
-                type === 'success' && "text-green-900/80 dark:text-green-100/80",
-                type === 'warning' && "text-amber-900/80 dark:text-amber-100/80",
-                type === 'error' && "text-red-900/80 dark:text-red-100/80",
-                type === 'info' && "text-blue-900/80 dark:text-blue-100/80",
-                type === 'default' && "text-muted-foreground"
-              )}>
-                {children}
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      // Download Box Component Handling
-      if (className?.includes('dlBox')) {
-        return (
-          <div className="my-10 p-6 rounded-2xl bg-card border border-border shadow-md flex items-center justify-between gap-6 group hover:border-primary/40 transition-all">
-            <div className="flex items-center gap-5">
-              <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
-                <Download className="h-7 w-7 transition-transform group-hover:scale-110" />
-              </div>
-              <div className="space-y-1">
-                 <div className="font-bold text-base text-foreground flex items-center gap-2">
-                    {children}
-                 </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      return <div className={className} {...(props as any).node ? { ...props, node: undefined } : props}>{children}</div>;
-    },
-    table: ({ children, className }: any) => (
-      <div className={cn(
-        "my-10 w-full overflow-x-auto rounded-2xl border border-border shadow-xl",
-        className?.includes('sticky') && "max-h-[600px] overflow-y-auto"
-      )}>
-        <table className={cn(
-          "w-full text-sm text-left border-collapse",
-          className?.includes('stripped') && "divide-y divide-border",
-          className?.includes('bordered') && "border-border"
-        )}>
-          {children}
-        </table>
-      </div>
-    ),
-    thead: ({ children }: any) => <thead className="bg-muted/80 backdrop-blur-sm border-b border-border sticky top-0 z-10">{children}</thead>,
-    th: ({ children }: any) => <th className="px-6 py-4 font-black text-foreground text-[11px] uppercase tracking-wider">{children}</th>,
-    td: ({ children }: any) => <td className="px-6 py-4 text-foreground/80 border-b border-border/50 text-[13px]">{children}</td>,
-    tr: ({ children, className }: any) => (
-      <tr className={cn(
-        "hover:bg-primary/[0.02] transition-colors",
-        className?.includes('stripped') && "odd:bg-muted/30"
-      )}>
-        {children}
-      </tr>
-    ),
-    ol: ({ children, className }: any) => {
-      if (className?.includes('steps')) {
-        return <InteractiveSteps language={language}>{children}</InteractiveSteps>;
-      }
-      return <ol className="list-decimal pl-6 my-6 space-y-3">{children}</ol>;
-    },
-    iframe: CustomIframe,
-    video: CustomVideo,
-    img: ({ src, alt, title }: any) => {
-      if (!src) return null;
-      return (
-        <div className="my-8 space-y-3">
-          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted/20 shadow-lg group">
-            <Image 
-              src={src} 
-              alt={alt || "Documentation screenshot"} 
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-          </div>
-          {alt && (
-            <p className="text-center text-[12px] text-muted-foreground italic font-medium">
-              {alt}
-            </p>
-          )}
-        </div>
-      );
-    }
-  };
 
   return (
     <motion.div
